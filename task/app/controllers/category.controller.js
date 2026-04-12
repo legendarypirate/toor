@@ -29,83 +29,132 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ 
+// `.any()` parses all multipart fields into req.body reliably; `.fields([image])` can leave
+// req.body empty behind some proxies/clients. We only accept image files via fileFilter.
+const upload = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
   fileFilter: (req, file, cb) => {
+    if (file.fieldname !== "image") {
+      return cb(null, false); // ignore non-image file fields
+    }
     const allowedTypes = /jpeg|jpg|png|gif|webp/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = allowedTypes.test(file.mimetype);
-    
+
     if (extname && mimetype) {
       return cb(null, true);
-    } else {
-      cb(new Error('Only image files are allowed!'));
     }
+    cb(new Error("Only image files are allowed!"));
+  },
+}).any();
+
+function contentType(req) {
+  return String(req.headers["content-type"] || "").toLowerCase();
+}
+
+function isMultipart(req) {
+  return contentType(req).includes("multipart/form-data");
+}
+
+/** Normalize text fields (some stacks duplicate fields as arrays). */
+function pickFirst(val) {
+  if (val == null) return "";
+  if (Array.isArray(val)) return String(val[0] ?? "").trim();
+  return String(val).trim();
+}
+
+function pickCategoryName(req) {
+  const b = req.body || {};
+  return (
+    pickFirst(b.name) ||
+    pickFirst(b.nameMn) ||
+    pickFirst(b.Name) ||
+    pickFirst(b.NAME)
+  );
+}
+
+function findUploadedImage(req) {
+  const files = req.files;
+  if (!files || !Array.isArray(files)) return null;
+  return files.find((f) => f.fieldname === "image") || null;
+}
+
+async function createCategoryFromRequest(req, res) {
+  const nameTrim = pickCategoryName(req);
+  if (!nameTrim) {
+    console.warn(
+      "category.create: missing name; content-type=%s bodyKeys=%s",
+      contentType(req),
+      req.body && typeof req.body === "object" ? Object.keys(req.body).join(",") : "(no body)"
+    );
+    return res.status(400).send({ message: "Name is required!" });
   }
-}).fields([{ name: "image", maxCount: 1 }]);
+
+  let imagePath = "default-category.jpg";
+  const uploaded = findUploadedImage(req);
+  if (uploaded) {
+    imagePath = "/assets/category/" + uploaded.filename;
+    console.log(`File uploaded: ${uploaded.filename}, saved to: ${imagePath}`);
+  }
+
+  let parentId = pickFirst(req.body.parentId) || null;
+  if (parentId === "" || parentId === "null" || parentId === "undefined") {
+    parentId = null;
+  }
+
+  let order = null;
+  if (!parentId) {
+    const maxOrderCategory = await Category.findOne({
+      where: { parentId: null },
+      order: [["order", "DESC"]],
+      attributes: ["order"],
+    });
+    order =
+      maxOrderCategory && maxOrderCategory.order !== null
+        ? maxOrderCategory.order + 1
+        : 1;
+  }
+
+  const category = {
+    name: nameTrim,
+    nameMn: nameTrim,
+    image: imagePath,
+    description: pickFirst(req.body.description) || "",
+    parentId,
+    productCount: Number(req.body.productCount) || 0,
+    order,
+  };
+
+  const data = await Category.create(category);
+  res.send(data);
+}
 
 // Create and Save a new Category
 exports.create = async (req, res) => {
-  upload(req, res, async (err) => {
+  const run = async (err) => {
     try {
       if (err) {
         console.error("Upload error:", err);
-        return res.status(400).send({ 
-          message: err.message || "Image upload failed." 
+        return res.status(400).send({
+          message: err.message || "Image upload failed.",
         });
       }
-
-      const nameRaw = (req.body && (req.body.name ?? req.body.nameMn)) || "";
-      const nameTrim = String(nameRaw).trim();
-      if (!nameTrim) {
-        return res.status(400).send({ message: "Name is required!" });
-      }
-
-      // Get the filename if file was uploaded
-      let imagePath = "default-category.jpg";
-      const uploaded = req.files && req.files.image && req.files.image[0];
-      if (uploaded) {
-        imagePath = "/assets/category/" + uploaded.filename;
-        console.log(`File uploaded: ${uploaded.filename}, saved to: ${imagePath}`);
-      }
-
-      const categoryName = nameTrim;
-      const parentId = req.body.parentId || null;
-      
-      // Set order for parent categories (first-level only)
-      let order = null;
-      if (!parentId) {
-        // Get the max order value for parent categories
-        const maxOrderCategory = await Category.findOne({
-          where: { parentId: null },
-          order: [['order', 'DESC']],
-          attributes: ['order']
-        });
-        order = maxOrderCategory && maxOrderCategory.order !== null 
-          ? maxOrderCategory.order + 1 
-          : 1;
-      }
-      
-      const category = {
-        name: categoryName,
-        nameMn: categoryName,
-        image: imagePath,
-        description: req.body.description || "",
-        parentId: parentId,
-        productCount: req.body.productCount || 0,
-        order: order,
-      };
-
-      const data = await Category.create(category);
-      res.send(data);
+      await createCategoryFromRequest(req, res);
     } catch (error) {
       console.error("Error creating category:", error);
       res.status(500).send({
         message: error.message || "Some error occurred while creating the Category.",
       });
     }
-  });
+  };
+
+  // JSON / urlencoded: body already parsed by express middleware — do not run multer (would see empty body).
+  if (!isMultipart(req)) {
+    return run(null);
+  }
+
+  upload(req, res, run);
 };
 
 // Helper function to get all child category IDs recursively from a map
@@ -269,60 +318,55 @@ exports.findOne = async (req, res) => {
 
 // Update a category (with optional new image upload)
 exports.update = async (req, res) => {
-  upload(req, res, async (err) => {
+  const run = async (err) => {
     try {
       if (err) {
         console.error("Image upload error:", err);
-        return res.status(400).send({ 
-          message: err.message || "Image upload failed." 
+        return res.status(400).send({
+          message: err.message || "Image upload failed.",
         });
       }
 
       const id = req.params.id;
-
-      // Prepare updates object
       const updates = {};
-      
-      // Accept either name or nameMn as the name field
-      if (req.body.name || req.body.nameMn) {
-        const newName = req.body.name || req.body.nameMn;
-        updates.name = newName;
-        updates.nameMn = newName;
+
+      const nm = pickCategoryName(req);
+      if (nm) {
+        updates.name = nm;
+        updates.nameMn = nm;
       }
-      
-      // Add other fields if they exist
-      if (req.body.description !== undefined) {
-        updates.description = req.body.description;
+
+      if (req.body && req.body.description !== undefined) {
+        updates.description = pickFirst(req.body.description);
       }
-      
-      if (req.body.parentId !== undefined) {
-        updates.parentId = req.body.parentId;
+
+      if (req.body && req.body.parentId !== undefined) {
+        let pid = pickFirst(req.body.parentId) || null;
+        if (pid === "" || pid === "null" || pid === "undefined") pid = null;
+        updates.parentId = pid;
       }
-      
-      if (req.body.productCount !== undefined) {
-        updates.productCount = req.body.productCount;
+
+      if (req.body && req.body.productCount !== undefined) {
+        updates.productCount = Number(req.body.productCount);
       }
-      
-      if (req.body.order !== undefined) {
+
+      if (req.body && req.body.order !== undefined) {
         updates.order = req.body.order;
       }
 
-      // Handle image upload
-      const uploadFile = req.files && req.files.image && req.files.image[0];
+      const uploadFile = findUploadedImage(req);
       if (uploadFile) {
-        // First, get the old category to delete old image if exists
         const oldCategory = await Category.findByPk(id);
         if (oldCategory && oldCategory.image && oldCategory.image !== "default-category.jpg") {
-          const oldImagePath = oldCategory.image.replace('/assets/category/', '');
+          const oldImagePath = oldCategory.image.replace("/assets/category/", "");
           const oldImageFullPath = path.join(uploadDir, oldImagePath);
-          
-          // Delete old image file
+
           if (fs.existsSync(oldImageFullPath)) {
             fs.unlinkSync(oldImageFullPath);
             console.log(`Deleted old image: ${oldImageFullPath}`);
           }
         }
-        
+
         updates.image = "/assets/category/" + uploadFile.filename;
         console.log(`Updated image to: ${updates.image}`);
       }
@@ -348,7 +392,13 @@ exports.update = async (req, res) => {
         message: "Error updating Category with id=" + req.params.id,
       });
     }
-  });
+  };
+
+  if (!isMultipart(req)) {
+    return run(null);
+  }
+
+  upload(req, res, run);
 };
 // Delete category
 exports.delete = async (req, res) => {
