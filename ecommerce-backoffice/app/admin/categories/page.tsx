@@ -541,24 +541,32 @@ export default function CategoriesPage() {
   // Create category via API with file upload support
   const createCategory = async (name: string, parentId: string | null = null, description: string = "", imageFile?: File) => {
     try {
-      const formData = new FormData();
-      formData.append('name', name);
-      formData.append('nameMn', name);
-      formData.append('description', description);
-      formData.append('productCount', '0');
-      
-      if (parentId) {
-        formData.append('parentId', parentId);
-      }
-      
+      // JSON when no file: avoids multipart/multer issues in production (empty req.body).
+      let response: Response;
       if (imageFile) {
+        const formData = new FormData();
+        formData.append('name', name);
+        formData.append('nameMn', name);
+        formData.append('description', description);
+        formData.append('productCount', '0');
+        if (parentId) {
+          formData.append('parentId', parentId);
+        }
         formData.append('image', imageFile);
+        response = await fetch(API_URL, { method: 'POST', body: formData });
+      } else {
+        response = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: name.trim(),
+            nameMn: name.trim(),
+            description: description || '',
+            productCount: 0,
+            parentId: parentId || null,
+          }),
+        });
       }
-
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        body: formData,
-      });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -577,22 +585,27 @@ export default function CategoriesPage() {
   // Update category via API
   const updateCategory = async (id: string, updates: { name: string; description?: string; imageFile?: File }) => {
     try {
-      const formData = new FormData();
-      formData.append('name', updates.name);
-      formData.append('nameMn', updates.name);
-      
-      if (updates.description !== undefined) {
-        formData.append('description', updates.description);
-      }
-      
+      let response: Response;
       if (updates.imageFile) {
+        const formData = new FormData();
+        formData.append('name', updates.name);
+        formData.append('nameMn', updates.name);
+        if (updates.description !== undefined) {
+          formData.append('description', updates.description);
+        }
         formData.append('image', updates.imageFile);
+        response = await fetch(`${API_URL}/${id}`, { method: 'PATCH', body: formData });
+      } else {
+        response = await fetch(`${API_URL}/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: updates.name.trim(),
+            nameMn: updates.name.trim(),
+            ...(updates.description !== undefined ? { description: updates.description } : {}),
+          }),
+        });
       }
-
-      const response = await fetch(`${API_URL}/${id}`, {
-        method: 'PATCH',
-        body: formData,
-      });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));

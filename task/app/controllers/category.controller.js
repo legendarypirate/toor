@@ -29,15 +29,12 @@ const storage = multer.diskStorage({
   },
 });
 
-// `.any()` parses all multipart fields into req.body reliably; `.fields([image])` can leave
-// req.body empty behind some proxies/clients. We only accept image files via fileFilter.
+// Optional single file field `image`; text fields go to req.body. Do not use `.any()` +
+// fileFilter(false) — that can drop text parts behind some proxies.
 const upload = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
   fileFilter: (req, file, cb) => {
-    if (file.fieldname !== "image") {
-      return cb(null, false); // ignore non-image file fields
-    }
     const allowedTypes = /jpeg|jpg|png|gif|webp/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = allowedTypes.test(file.mimetype);
@@ -47,7 +44,7 @@ const upload = multer({
     }
     cb(new Error("Only image files are allowed!"));
   },
-}).any();
+}).single("image");
 
 function contentType(req) {
   return String(req.headers["content-type"] || "").toLowerCase();
@@ -75,9 +72,7 @@ function pickCategoryName(req) {
 }
 
 function findUploadedImage(req) {
-  const files = req.files;
-  if (!files || !Array.isArray(files)) return null;
-  return files.find((f) => f.fieldname === "image") || null;
+  return req.file || null;
 }
 
 async function createCategoryFromRequest(req, res) {
@@ -93,7 +88,7 @@ async function createCategoryFromRequest(req, res) {
 
   let imagePath = "default-category.jpg";
   const uploaded = findUploadedImage(req);
-  if (uploaded) {
+  if (uploaded && uploaded.filename) {
     imagePath = "/assets/category/" + uploaded.filename;
     console.log(`File uploaded: ${uploaded.filename}, saved to: ${imagePath}`);
   }
