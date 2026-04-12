@@ -119,11 +119,13 @@ function CallSalesActivityForm({
                 <SelectValue placeholder="Сонгох" />
               </SelectTrigger>
               <SelectContent>
-                {users.map((user) => (
-                  <SelectItem key={user.id} value={user.id}>
-                    {user.full_name} {user.phone ? `(${user.phone})` : ''}
-                  </SelectItem>
-                ))}
+                {users
+                  .filter((u) => u.id != null && String(u.id).trim() !== "")
+                  .map((user) => (
+                    <SelectItem key={String(user.id)} value={String(user.id)}>
+                      {user.full_name} {user.phone ? `(${user.phone})` : ""}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>
@@ -150,11 +152,13 @@ function CallSalesActivityForm({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">Харилцагч сонгохгүй</SelectItem>
-                {users.map((user) => (
-                  <SelectItem key={user.id} value={user.id}>
-                    {user.full_name} {user.phone ? `(${user.phone})` : ''}
-                  </SelectItem>
-                ))}
+                {users
+                  .filter((u) => u.id != null && String(u.id).trim() !== "")
+                  .map((user) => (
+                    <SelectItem key={String(user.id)} value={String(user.id)}>
+                      {user.full_name} {user.phone ? `(${user.phone})` : ""}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>

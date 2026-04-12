@@ -100,14 +100,13 @@ function ReviewForm({
                   <SelectValue placeholder="Бүтээгдэхүүн сонгох" />
                 </SelectTrigger>
                 <SelectContent>
-                  {products.map((product, idx) => (
-                    <SelectItem
-                      key={product.id || `p-${idx}`}
-                      value={product.id ? String(product.id) : `__product_${idx}__`}
-                    >
-                      {product.nameMn || product.name || product.id}
-                    </SelectItem>
-                  ))}
+                  {products
+                    .filter((p) => p.id != null && String(p.id).trim() !== "")
+                    .map((product) => (
+                      <SelectItem key={String(product.id)} value={String(product.id)}>
+                        {product.nameMn || product.name || product.id}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
@@ -134,11 +133,13 @@ function ReviewForm({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__">Хэрэглэгч сонгохгүй</SelectItem>
-                  {users.map((user) => (
-                    <SelectItem key={user.id} value={user.id}>
-                      {user.full_name || user.email || user.id}
-                    </SelectItem>
-                  ))}
+                  {users
+                    .filter((u) => u.id != null && String(u.id).trim() !== "")
+                    .map((user) => (
+                      <SelectItem key={String(user.id)} value={String(user.id)}>
+                        {user.full_name || user.email || user.id}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
