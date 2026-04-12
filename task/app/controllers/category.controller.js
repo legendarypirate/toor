@@ -43,7 +43,7 @@ const upload = multer({
       cb(new Error('Only image files are allowed!'));
     }
   }
-}).single("image");
+}).fields([{ name: "image", maxCount: 1 }]);
 
 // Create and Save a new Category
 exports.create = async (req, res) => {
@@ -56,19 +56,21 @@ exports.create = async (req, res) => {
         });
       }
 
-      if (!req.body.name) {
+      const nameRaw = (req.body && (req.body.name ?? req.body.nameMn)) || "";
+      const nameTrim = String(nameRaw).trim();
+      if (!nameTrim) {
         return res.status(400).send({ message: "Name is required!" });
       }
 
       // Get the filename if file was uploaded
       let imagePath = "default-category.jpg";
-      if (req.file) {
-        // Use relative path for database storage
-        imagePath = "/assets/category/" + req.file.filename;
-        console.log(`File uploaded: ${req.file.filename}, saved to: ${imagePath}`);
+      const uploaded = req.files && req.files.image && req.files.image[0];
+      if (uploaded) {
+        imagePath = "/assets/category/" + uploaded.filename;
+        console.log(`File uploaded: ${uploaded.filename}, saved to: ${imagePath}`);
       }
 
-      const categoryName = req.body.nameMn || req.body.name;
+      const categoryName = nameTrim;
       const parentId = req.body.parentId || null;
       
       // Set order for parent categories (first-level only)
@@ -306,7 +308,8 @@ exports.update = async (req, res) => {
       }
 
       // Handle image upload
-      if (req.file) {
+      const uploadFile = req.files && req.files.image && req.files.image[0];
+      if (uploadFile) {
         // First, get the old category to delete old image if exists
         const oldCategory = await Category.findByPk(id);
         if (oldCategory && oldCategory.image && oldCategory.image !== "default-category.jpg") {
@@ -320,7 +323,7 @@ exports.update = async (req, res) => {
           }
         }
         
-        updates.image = "/assets/category/" + req.file.filename;
+        updates.image = "/assets/category/" + uploadFile.filename;
         console.log(`Updated image to: ${updates.image}`);
       }
 

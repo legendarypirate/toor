@@ -13,20 +13,20 @@ module.exports = app => {
   // Get last delivered order (requires authentication)
   router.get("/last-delivered", auth.verifyToken, orders.getLastDeliveredOrder);
 
+  // Get all orders (admin) — must be before /:id so "admin" is not captured as an id
+  router.get("/admin/all", orders.findAll);
+
+  // Retrieve Order by order number (before /:id)
+  router.get("/number/:orderNumber", orders.findByOrderNumber);
+
   // Retrieve a single Order with id
   router.get("/:id", orders.findOne);
-
-  // Retrieve Order by order number
-  router.get("/number/:orderNumber", orders.findByOrderNumber);
 
   // Update an Order with id
   router.patch("/:id", orders.update);
 
   // Delete an Order with id
   router.delete("/:id", orders.delete);
-
-  // Get all orders (admin)
-  router.get("/admin/all", orders.findAll);
 
   // Update order status
   router.patch("/:id/status", orders.updateStatus);

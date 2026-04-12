@@ -5,7 +5,15 @@ const path = require("path");
 const app = express();
 
 // Allowed origins
-const allowedOrigins = ["http://localhost:3000", "http://localhost:3002","https://label.mn","https://www.label.mn","https://admin.label.mn"];
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:3002",
+  "https://label.mn",
+  "https://www.label.mn",
+  "https://admin.label.mn",
+  "https://backout.teensclub.mn",
+  "http://backout.teensclub.mn",
+];
 
 // CORS configuration
 const corsOptions = {

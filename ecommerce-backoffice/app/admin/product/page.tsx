@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { TiptapEditor } from "@/components/editor/TiptapEditor";
+import { getApiBase } from "@/lib/apiBase";
 
 // Simple Textarea component
 const Textarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>(
@@ -153,8 +154,8 @@ type BankAccount = {
   company?: string;
 };
 
-// API base URL
-const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
+// API base URL (…/api — avoids /api/api when env already ends with /api)
+const API_URL = getApiBase();
 
 // Cloudinary configuration
 const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;

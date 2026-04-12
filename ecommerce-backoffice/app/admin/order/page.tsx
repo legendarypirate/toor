@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Search, Eye, Edit, Truck, CheckCircle, XCircle, Printer, Trash2, ChevronLeft, ChevronRight, QrCode, UserCircle } from "lucide-react";
 import { useState, useEffect } from "react";
+import { getApiBase } from "@/lib/apiBase";
 
 type OrderItem = {
   id?: number;
@@ -82,8 +83,8 @@ function OrderPage() {
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
 
-  // API base URL
-  const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/order`;
+  // API base URL (…/api/order — avoids /api/api when env already ends with /api)
+  const API_URL = `${getApiBase()}/order`;
 
   // Map backend order status to frontend status
   const mapOrderStatus = (status: number): Order["status"] => {

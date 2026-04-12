@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { getApiBase, getApiOrigin } from "@/lib/apiBase";
 import { Plus, Trash2, Edit2, ChevronRight, ChevronDown, Folder, FolderOpen, Search, Image as ImageIcon, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -114,11 +115,11 @@ function CategoryItem({ category, onAddChild, onDelete, onEdit, level, dragHandl
     
     // If it's a relative path starting with /assets, make it full URL
     if (imagePath.startsWith('/assets')) {
-      return `${process.env.NEXT_PUBLIC_API_URL}${imagePath}`;
+      return `${getApiOrigin()}${imagePath}`;
     }
     
     // Default image for default-category.jpg or other relative paths
-    return imagePath === "default-category.jpg" ? "/default-category.jpg" : `${process.env.NEXT_PUBLIC_API_URL}/assets/category/${imagePath}`;
+    return imagePath === "default-category.jpg" ? "/default-category.jpg" : `${getApiOrigin()}/assets/category/${imagePath}`;
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -432,7 +433,7 @@ export default function CategoriesPage() {
   const [imageFile, setImageFile] = useState<File | undefined>(undefined);
 
   // API base URL
-  const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/categories`;
+  const API_URL = `${getApiBase()}/categories`;
 
   // Drag and drop sensors
   const sensors = useSensors(

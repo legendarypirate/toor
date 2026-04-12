@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { getApiBase } from "@/lib/apiBase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -160,7 +161,7 @@ export default function AdminHome() {
   const [averagePurchaseFrequency, setAveragePurchaseFrequency] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const API_BASE = getApiBase();
 
   const getAuthToken = () => {
     if (typeof window !== 'undefined') {
@@ -236,16 +237,16 @@ export default function AdminHome() {
 
       // Fetch data with pagination/limits to prevent memory issues
       const [usersRes, ordersRes, productsRes, couponsRes] = await Promise.all([
-        fetch(`${API_URL}/api/user/all?page=1&limit=1000`, {
+        fetch(`${API_BASE}/user/all?page=1&limit=1000`, {
           headers: token ? { 'Authorization': `Bearer ${token}` } : {},
         }),
-        fetch(`${API_URL}/api/order/admin/all?page=1&limit=1000`, {
+        fetch(`${API_BASE}/order/admin/all?page=1&limit=1000`, {
           headers: token ? { 'Authorization': `Bearer ${token}` } : {},
         }),
-        fetch(`${API_URL}/api/products?page=1&limit=1000`, {
+        fetch(`${API_BASE}/products?page=1&limit=1000`, {
           headers: token ? { 'Authorization': `Bearer ${token}` } : {},
         }),
-        fetch(`${API_URL}/api/coupons/stats`, {
+        fetch(`${API_BASE}/coupons/stats`, {
           headers: token ? { 'Authorization': `Bearer ${token}` } : {},
         }),
       ]);
