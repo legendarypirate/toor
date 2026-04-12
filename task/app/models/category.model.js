@@ -16,7 +16,8 @@ module.exports = (sequelize, Sequelize) => {
         },
         image: {
             type: Sequelize.STRING,
-            allowNull: false
+            allowNull: false,
+            defaultValue: "default-category.jpg",
         },
         description: {
             type: Sequelize.TEXT

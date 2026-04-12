@@ -75,6 +75,8 @@ function findUploadedImage(req) {
   return req.file || null;
 }
 
+const DEFAULT_CATEGORY_IMAGE = "default-category.jpg";
+
 async function createCategoryFromRequest(req, res) {
   const nameTrim = pickCategoryName(req);
   if (!nameTrim) {
@@ -86,12 +88,15 @@ async function createCategoryFromRequest(req, res) {
     return res.status(400).send({ message: "Name is required!" });
   }
 
-  let imagePath = "default-category.jpg";
   const uploaded = findUploadedImage(req);
+  let imagePath = DEFAULT_CATEGORY_IMAGE;
   if (uploaded && uploaded.filename) {
     imagePath = "/assets/category/" + uploaded.filename;
     console.log(`File uploaded: ${uploaded.filename}, saved to: ${imagePath}`);
   }
+  // Sequelize omits `undefined`; DB then gets NULL → notNull violation. Never omit or pass null.
+  const image =
+    imagePath && String(imagePath).trim() ? String(imagePath).trim() : DEFAULT_CATEGORY_IMAGE;
 
   let parentId = pickFirst(req.body.parentId) || null;
   if (parentId === "" || parentId === "null" || parentId === "undefined") {
@@ -114,7 +119,7 @@ async function createCategoryFromRequest(req, res) {
   const category = {
     name: nameTrim,
     nameMn: nameTrim,
-    image: imagePath,
+    image,
     description: pickFirst(req.body.description) || "",
     parentId,
     productCount: Number(req.body.productCount) || 0,
