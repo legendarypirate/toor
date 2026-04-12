@@ -1,25 +1,29 @@
 // app/layout.tsx
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Nunito } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "./context/CartContext";
 import { AuthProvider } from './context/AuthContext';
 import ReOrderHandler from './components/ReOrderHandler';
 
-const inter = Inter({ subsets: ["latin"] });
+const nunito = Nunito({
+  subsets: ["latin", "cyrillic"],
+  variable: "--font-nunito",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: {
-    default: "Нүүр хуудас",
-    template: "%s | TSAAS"
+    default: "Outdoor World",
+    template: "%s | Outdoor World"
   },
   description: "E-commerce app",
   icons: {
     icon: [
-      { url: "/logotsas.png", type: "image/png" },
+      { url: "/outlogo.png", type: "image/png" },
     ],
-    shortcut: "/logotsas.png",
-    apple: "/logotsas.png",
+    shortcut: "/outlogo.png",
+    apple: "/outlogo.png",
   },
 };
 
@@ -29,8 +33,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="mn" className={nunito.variable}>
+      <body className={nunito.className}>
         <AuthProvider>
           <CartProvider>
             <ReOrderHandler />

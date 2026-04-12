@@ -13,6 +13,8 @@ import Link from 'next/link';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/navigation';
+import { showAppMessage } from '@/app/lib/appMessage';
+import { safeImgSrc } from '@/app/lib/imageSrc';
 
 const CartPage = () => {
   const router = useRouter();
@@ -44,7 +46,7 @@ const CartPage = () => {
   const [isGoogleRedirecting, setIsGoogleRedirecting] = useState(false);
 
   useEffect(() => {
-    document.title = 'Сагс | TSAAS';
+    document.title = 'Сагс | Outdoor World';
   }, []);
 
   useEffect(() => {
@@ -203,42 +205,6 @@ useEffect(() => {
     router.push('/checkout');
   };
 
-  // Toast notification function
-  const showToast = (message: string, type: 'success' | 'error' | 'warning' = 'success') => {
-    const toast = document.createElement('div');
-    toast.className = `fixed top-[100px] right-4 z-50 px-4 py-3 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full ${
-      type === 'success' ? 'bg-green-50 border border-green-200 text-green-800' :
-      type === 'error' ? 'bg-red-50 border border-red-200 text-red-800' :
-      'bg-yellow-50 border border-yellow-200 text-yellow-800'
-    }`;
-    
-    toast.innerHTML = `
-      <div class="flex items-center">
-        <div class="mr-3">
-          ${type === 'success' ? '✅' : type === 'error' ? '❌' : '⚠️'}
-        </div>
-        <div class="font-medium">${message}</div>
-      </div>
-    `;
-    
-    document.body.appendChild(toast);
-    
-    // Animate in
-    setTimeout(() => {
-      toast.classList.remove('translate-x-full');
-    }, 10);
-    
-    // Remove after 3 seconds
-    setTimeout(() => {
-      toast.classList.add('translate-x-full');
-      setTimeout(() => {
-        if (document.body.contains(toast)) {
-          document.body.removeChild(toast);
-        }
-      }, 300);
-    }, 3000);
-  };
-
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoginLoading(true);
@@ -256,7 +222,7 @@ useEffect(() => {
       }
       
       await login(credentials);
-      showToast('амжилттай нэвтэрлээ', 'success');
+      showAppMessage('амжилттай нэвтэрлээ', 'success');
       setIsLoginModalOpen(false);
       setEmail('');
       setPassword('');
@@ -316,7 +282,7 @@ useEffect(() => {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <div className="container mx-auto px-4 py-12">
+        <div className="mx-auto w-full max-w-layout px-3 py-12">
           <div className="text-center">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
             <p className="mt-4 text-gray-600">Сагсны мэдээлэл ачаалж байна...</p>
@@ -331,7 +297,7 @@ useEffect(() => {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <div className="container mx-auto px-4 py-12">
+        <div className="mx-auto w-full max-w-layout px-3 py-12">
           <div className="max-w-md mx-auto text-center">
             <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <ShoppingBag className="w-12 h-12 text-gray-400" />
@@ -368,7 +334,7 @@ useEffect(() => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      <div className="container mx-auto px-4 py-8">
+      <div className="mx-auto w-full max-w-layout px-3 py-8">
         {/* Page Header */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900">Таны сагс</h1>
@@ -376,9 +342,9 @@ useEffect(() => {
             <p className="text-gray-600">{cartCount} бараа</p>
             {isAuthenticated && user && (
               <div className="flex items-center gap-2 text-sm text-gray-600">
-                {user.avatar ? (
+                {user.avatar?.trim() ? (
                   <img 
-                    src={user.avatar} 
+                    src={user.avatar.trim()} 
                     alt={user.full_name} 
                     className="w-6 h-6 rounded-full"
                   />
@@ -436,11 +402,11 @@ useEffect(() => {
                     {/* Product Image */}
                     <div className="w-full sm:w-24 h-48 sm:h-24 flex-shrink-0">
                       <img
-                        src={item.product.image}
+                        src={safeImgSrc(item.product.image)}
                         alt={item.product.nameMn}
                         className="w-full h-full object-cover rounded-lg"
                         onError={(e) => {
-                          e.currentTarget.src = '/placeholder.jpg';
+                          e.currentTarget.src = '/default.jpg';
                         }}
                       />
                     </div>

@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Star, Heart, ShoppingCart, Share2, Truck, Shield, RotateCcw, ChevronLeft, ZoomIn, X } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { safeImgSrc } from '../lib/imageSrc';
 
 const ProductDetailPage = () => {
   const [selectedImage, setSelectedImage] = useState(0);
@@ -127,7 +128,7 @@ const ProductDetailPage = () => {
 
       {/* Breadcrumb */}
       <div className="border-b border-gray-200 bg-white">
-        <div className="container mx-auto px-4 py-3">
+        <div className="mx-auto w-full max-w-layout px-3 py-3">
           <div className="flex items-center text-sm text-gray-600">
             <a href="/" className="hover:text-gray-900">Нүүр</a>
             <ChevronLeft className="w-4 h-4 mx-2 rotate-180" />
@@ -138,7 +139,7 @@ const ProductDetailPage = () => {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="mx-auto w-full max-w-layout px-3 py-8">
         <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
           <div className="grid lg:grid-cols-2 gap-8">
             {/* Product Images with Simple Hover Zoom */}
@@ -368,7 +369,7 @@ const ProductDetailPage = () => {
               <div key={item.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:border-gray-300 transition-colors">
                 <div className="aspect-square bg-gray-100">
                   <img 
-                    src={item.image} 
+                    src={safeImgSrc(item.image)} 
                     alt={item.name}
                     className="w-full h-full object-cover"
                   />

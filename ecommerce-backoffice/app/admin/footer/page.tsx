@@ -400,7 +400,7 @@ export default function FooterPage() {
                   id="description"
                   value={footer.description || ''}
                   onChange={(e) => setFooter({ ...footer, description: e.target.value })}
-                  placeholder="ПОСЫН ЦААС БӨӨНИЙ ХУДАЛДАА, КАССЫН ТОНОГ ТӨХӨӨРӨМЖИЙН ТӨВ"
+                  placeholder="Аялалын бүх үйлчилгээ нэг дор"
                   rows={3}
                 />
               </div>

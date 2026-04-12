@@ -2,6 +2,10 @@ const db = require("../models");
 const Footer = db.footers;
 const Op = db.Sequelize.Op;
 
+const LEGACY_FOOTER_DESCRIPTION =
+  "ПОСЫН ЦААС БӨӨНИЙ ХУДАЛДАА, КАССЫН ТОНОГ ТӨХӨӨРӨМЖИЙН ТӨВ";
+const FOOTER_TAGLINE = "Аялалын бүх үйлчилгээ нэг дор";
+
 // Get footer data (there should only be one footer record)
 exports.findOne = async (req, res) => {
   try {
@@ -12,10 +16,10 @@ exports.findOne = async (req, res) => {
     // If no footer exists, create a default one
     if (!footer) {
       footer = await Footer.create({
-        companyName: "Tsaas.mn",
-        companySuffix: ".mn",
-        description: "ПОСЫН ЦААС БӨӨНИЙ ХУДАЛДАА, КАССЫН ТОНОГ ТӨХӨӨРӨМЖИЙН ТӨВ",
-        logoUrl: "/logotsas.png",
+        companyName: "Outdoor World",
+        companySuffix: "",
+        description: "Аялалын бүх үйлчилгээ нэг дор",
+        logoUrl: "/outlogo.png",
         socialLinks: [
           { name: "Facebook", icon: "f", url: "#" },
           { name: "Twitter", icon: "t", url: "#" },
@@ -30,15 +34,27 @@ exports.findOne = async (req, res) => {
           { label: "Тусламж", url: "#" }
         ],
         phone: "+976 7000-5060",
-        email: "info@tsaas.mn",
+        email: "info@outdoorworld.mn",
         address: "Улаанбаатар хот, Хан-Уул дүүрэг 2-р хороо 19 Үйлчилгээний төвөөс баруун тийш 15-р сургуулийн дэргэд",
-        copyrightText: "© 2025 Tsaas.mn",
+        copyrightText: "© 2025 Outdoor World",
         footerLinks: [
           { label: "Нууцлалын бодлого", url: "#" },
           { label: "Үйлчилгээний нөхцөл", url: "#" },
           { label: "Төлбөрийн нөхцөл", url: "#" }
         ]
       });
+    }
+
+    // One-time fix: DB may still store the old default blurb from a previous business.
+    if (
+      footer &&
+      String(footer.description || "").trim() === LEGACY_FOOTER_DESCRIPTION
+    ) {
+      await Footer.update(
+        { description: FOOTER_TAGLINE },
+        { where: { id: footer.id } }
+      );
+      await footer.reload();
     }
 
     res.send(footer);

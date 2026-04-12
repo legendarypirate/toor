@@ -132,7 +132,7 @@ const MyPage = () => {
 
   useEffect(() => {
     setIsClient(true);
-    document.title = 'Миний хуудас | TSAAS';
+    document.title = 'Миний хуудас | Outdoor World';
   }, []);
 
   // Load data from localStorage
@@ -487,7 +487,7 @@ const MyPage = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <div className="container mx-auto px-4 py-8">
+        <div className="mx-auto w-full max-w-layout px-3 py-8">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-200 rounded w-64 mb-8"></div>
             <div className="grid lg:grid-cols-4 gap-8">
@@ -513,7 +513,7 @@ const MyPage = () => {
     <div className="min-h-screen bg-gray-50">
       <Header />
       
-      <div className="container mx-auto px-4 py-8">
+      <div className="mx-auto w-full max-w-layout px-3 py-8">
         {/* Page Header */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900">Миний хуудас</h1>

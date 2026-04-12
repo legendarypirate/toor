@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { X, ShoppingCart, Package, Calendar, MapPin, Phone, CheckCircle } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useRouter } from 'next/navigation';
+import { safeImgSrc } from '@/app/lib/imageSrc';
 
 interface OrderItem {
   id: number;
@@ -288,16 +289,16 @@ export default function ReOrderModal({ isOpen, onClose, order }: ReOrderModalPro
                   key={item.id}
                   className="flex items-center gap-4 p-3 bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow"
                 >
-                  {item.image && (
+                  {item.image?.trim() ? (
                     <img
-                      src={item.image}
+                      src={safeImgSrc(item.image)}
                       alt={item.name_mn || item.name}
                       className="w-16 h-16 object-cover rounded"
                       onError={(e) => {
-                        e.currentTarget.src = '/placeholder.jpg';
+                        e.currentTarget.src = '/default.jpg';
                       }}
                     />
-                  )}
+                  ) : null}
                   <div className="flex-1 min-w-0">
                     <h4 className="font-medium text-gray-900 truncate">
                       {item.name_mn || item.name}

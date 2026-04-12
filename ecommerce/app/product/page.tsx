@@ -4,8 +4,10 @@ import React, { useState, useEffect, Suspense } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Filter, X, ChevronDown, ChevronRight, Star, ShoppingCart, Sliders, Loader2 } from 'lucide-react';
+import { Filter, X, ChevronDown, ChevronRight, Star, ShoppingCart, Sliders, Loader2, Store, Tag } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { showAppMessage } from '@/app/lib/appMessage';
+import { firstNonEmptyImg } from '@/app/lib/imageSrc';
 
 interface Product {
   id: string;
@@ -84,6 +86,16 @@ interface CategoriesResponse {
   total: number;
 }
 
+interface CatalogBrandRow {
+  id: string;
+  name: string;
+}
+
+interface RetailStoreRow {
+  id: string;
+  name: string;
+}
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 const ProductListPageContent = () => {
@@ -94,13 +106,16 @@ const ProductListPageContent = () => {
   const searchQuery = searchParams.get('q') || '';
 
   useEffect(() => {
-    document.title = 'Дэлгүүр | TSAAS';
+    document.title = 'Дэлгүүр | Outdoor World';
   }, []);
   
   const [selectedCategory, setSelectedCategory] = useState<string>(categoryId);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 5000000]);
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+  const [selectedStoreIds, setSelectedStoreIds] = useState<string[]>([]);
+  const [catalogBrands, setCatalogBrands] = useState<CatalogBrandRow[]>([]);
+  const [retailStores, setRetailStores] = useState<RetailStoreRow[]>([]);
   const [sortBy, setSortBy] = useState<string>('default');
   const [showMobileFilters, setShowMobileFilters] = useState<boolean>(false);
   const [activeFilters, setActiveFilters] = useState<number>(0);
@@ -137,6 +152,28 @@ const ProductListPageContent = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    const loadCatalog = async () => {
+      try {
+        const [bRes, sRes] = await Promise.all([
+          fetch(`${API_URL}/brands/active`),
+          fetch(`${API_URL}/retail-stores/active`),
+        ]);
+        if (bRes.ok) {
+          const data = await bRes.json();
+          setCatalogBrands(Array.isArray(data) ? data : []);
+        }
+        if (sRes.ok) {
+          const data = await sRes.json();
+          setRetailStores(Array.isArray(data) ? data : []);
+        }
+      } catch {
+        /* ignore */
+      }
+    };
+    loadCatalog();
+  }, []);
+
   // Fetch products when filters change (but wait for categories to load first)
   useEffect(() => {
     // Don't fetch if categories haven't loaded yet (unless it's a category change or search)
@@ -148,15 +185,16 @@ const ProductListPageContent = () => {
     // This fixes the deadlock where products never load on initial page visit
     fetchProducts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCategory, priceRange, selectedBrands, sortBy, categories.length, searchQuery]);
+  }, [selectedCategory, priceRange, selectedBrands, selectedStoreIds, sortBy, categories.length, searchQuery]);
 
   useEffect(() => {
     let count = 0;
     if (selectedCategory !== 'all') count++;
     if (priceRange[0] > priceStats.min || priceRange[1] < priceStats.max) count++;
     if (selectedBrands.length > 0) count++;
+    if (selectedStoreIds.length > 0) count++;
     setActiveFilters(count);
-  }, [selectedCategory, priceRange, selectedBrands, priceStats]);
+  }, [selectedCategory, priceRange, selectedBrands, selectedStoreIds, priceStats]);
 
   useEffect(() => {
     if (selectedCategory !== 'all' && categories.length > 0) {
@@ -240,6 +278,10 @@ const ProductListPageContent = () => {
       
       if (selectedBrands.length > 0) {
         url += `&brand=${selectedBrands.map(encodeURIComponent).join(',')}`;
+      }
+
+      if (selectedStoreIds.length > 0) {
+        url += `&retailStoreId=${selectedStoreIds.map(encodeURIComponent).join(',')}`;
       }
       
       switch (sortBy) {
@@ -356,6 +398,15 @@ const ProductListPageContent = () => {
     setSelectedBrands(prev => prev.includes(brand) ? prev.filter(b => b !== brand) : [...prev, brand]);
   };
 
+  const handleStoreToggle = (storeId: string) => {
+    setSelectedStoreIds((prev) =>
+      prev.includes(storeId) ? prev.filter((id) => id !== storeId) : [...prev, storeId]
+    );
+  };
+
+  const brandFilterOptions =
+    catalogBrands.length > 0 ? catalogBrands.map((b) => b.name).filter(Boolean) : brands;
+
   const loadMore = () => {
     if (hasMore && !loadingMore) {
       const nextPage = page + 1;
@@ -391,6 +442,7 @@ const ProductListPageContent = () => {
     handleCategoryChange('all');
     setPriceRange([priceStats.min, priceStats.max]);
     setSelectedBrands([]);
+    setSelectedStoreIds([]);
   };
 
   const renderCategoryTree = (categories: Category[], level: number = 0) => {
@@ -408,12 +460,12 @@ const ProductListPageContent = () => {
       return (
         <div key={category.id} className="w-full">
           <div 
-            className={`w-full flex justify-between items-center px-2 py-1.5 rounded text-sm ${
+            className={`w-full flex justify-between items-center rounded-xl border border-transparent px-2.5 py-2 text-[15px] transition-colors ${
               isSelected
-                ? 'bg-blue-50 text-blue-700 font-medium'
-                : 'text-gray-700 hover:bg-gray-50'
+                ? 'border-emerald-200/80 bg-gradient-to-r from-emerald-50 to-teal-50/80 font-semibold text-emerald-900 shadow-sm'
+                : 'text-slate-700 hover:border-slate-200 hover:bg-slate-50/90'
             }`}
-            style={{ paddingLeft: `${level * 16 + 8}px` }}
+            style={{ paddingLeft: `${level * 14 + 10}px` }}
           >
             <div className="flex items-center flex-1 min-w-0">
               {hasChildren ? (
@@ -422,21 +474,21 @@ const ProductListPageContent = () => {
                     e.stopPropagation();
                     toggleCategoryExpand(category.id);
                   }}
-                  className="w-4 h-4 flex items-center justify-center text-gray-500 hover:text-gray-700 mr-1 flex-shrink-0"
+                  className="mr-1.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg text-slate-500 transition hover:bg-white/80 hover:text-emerald-700"
                 >
                   {isExpanded ? (
-                    <ChevronDown className="w-3 h-3" />
+                    <ChevronDown className="h-4 w-4" />
                   ) : (
-                    <ChevronRight className="w-3 h-3" />
+                    <ChevronRight className="h-4 w-4" />
                   )}
                 </button>
               ) : (
-                <div className="w-4 mr-1 flex-shrink-0"></div>
+                <div className="mr-1 w-7 flex-shrink-0" />
               )}
               
               <button
                 onClick={() => handleCategoryChange(category.id)}
-                className="text-left truncate flex-1 min-w-0"
+                className="min-w-0 flex-1 truncate text-left"
                 title={getCategoryDisplayName(category)}
               >
                 {getCategoryDisplayName(category)}
@@ -444,7 +496,9 @@ const ProductListPageContent = () => {
             </div>
             
             {totalCount > 0 && (
-              <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
+              <span className={`ml-2 flex-shrink-0 rounded-full px-2 py-0.5 text-xs font-medium tabular-nums ${
+                isSelected ? 'bg-emerald-600/15 text-emerald-800' : 'bg-slate-100 text-slate-500'
+              }`}>
                 {totalCount}
               </span>
             )}
@@ -468,48 +522,13 @@ const ProductListPageContent = () => {
     router.push(`/product/${product.id}`);
   };
 
-  // Toast notification function
-  const showToast = (message: string, type: 'success' | 'error' | 'warning' = 'success') => {
-    // Create toast element
-    const toast = document.createElement('div');
-    toast.className = `fixed top-[100px] right-4 z-50 px-4 py-3 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full ${
-      type === 'success' ? 'bg-green-50 border border-green-200 text-green-800' :
-      type === 'error' ? 'bg-red-50 border border-red-200 text-red-800' :
-      'bg-yellow-50 border border-yellow-200 text-yellow-800'
-    }`;
-    
-    toast.innerHTML = `
-      <div class="flex items-center">
-        <div class="mr-3">
-          ${type === 'success' ? '✅' : type === 'error' ? '❌' : '⚠️'}
-        </div>
-        <div class="font-medium">${message}</div>
-      </div>
-    `;
-    
-    document.body.appendChild(toast);
-    
-    // Animate in
-    setTimeout(() => {
-      toast.classList.remove('translate-x-full');
-    }, 10);
-    
-    // Remove after 3 seconds
-    setTimeout(() => {
-      toast.classList.add('translate-x-full');
-      setTimeout(() => {
-        document.body.removeChild(toast);
-      }, 300);
-    }, 3000);
-  };
-
   const handleAddToCart = async (product: Product, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!product) return;
     
     // Check if product is in stock
     if (!product.inStock) {
-      showToast('Энэ бүтээгдэхүүн дууссан байна', 'warning');
+      showAppMessage('Энэ бүтээгдэхүүн дууссан байна', 'warning');
       return;
     }
     
@@ -532,7 +551,7 @@ const ProductListPageContent = () => {
         : product.inStock;
       
       if (!currentInStock) {
-        showToast('Энэ бүтээгдэхүүн дууссан байна', 'warning');
+        showAppMessage('Энэ бүтээгдэхүүн дууссан байна', 'warning');
         return;
       }
       
@@ -564,15 +583,15 @@ const ProductListPageContent = () => {
       const result = addToCart(cartItem);
       
       if (result.alreadyExists) {
-        showToast('энэ бараа сагсанд байна', 'warning');
+        showAppMessage('энэ бараа сагсанд байна', 'warning');
       } else if (result.success) {
         const displayName = product.nameMn || product.name || 'Бүтээгдэхүүн';
-        showToast(`${displayName} сагсанд нэмэгдлээ`, 'success');
+        showAppMessage(`${displayName} сагсанд нэмэгдлээ`, 'success');
       }
       
     } catch (error) {
       console.error('Error adding to cart:', error);
-      showToast('Алдаа гарлаа. Дахин оролдоно уу.', 'error');
+      showAppMessage('Алдаа гарлаа. Дахин оролдоно уу.', 'error');
     }
   };
 
@@ -600,7 +619,7 @@ const ProductListPageContent = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <div className="container mx-auto px-3 sm:px-4 py-6 pt-6">
+        <div className="mx-auto w-full max-w-layout px-3 py-6 pt-6">
           <div className="flex items-center justify-center h-96">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
@@ -617,7 +636,7 @@ const ProductListPageContent = () => {
     <div className="min-h-screen bg-gray-50">
       <Header />
 
-      <div className="container mx-auto px-3 sm:px-4 py-6">
+      <div className="mx-auto w-full max-w-layout px-3 py-6">
         {/* Page Header */}
         <div className="mb-6 pt-6">
           <h1 className="text-xl font-bold text-gray-900 mb-1">
@@ -636,103 +655,117 @@ const ProductListPageContent = () => {
           </p>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-4">
-          {/* Desktop Filters */}
-          <div className="hidden lg:block w-64 flex-shrink-0">
-            <div className="bg-white rounded-lg border border-gray-200 p-4 sticky top-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold text-gray-900">Ангилал</h3>
-                <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
+          {/* Desktop Filters — өргөн, тод харагдах панел */}
+          <div className="hidden lg:block w-[min(100%,22rem)] xl:w-96 flex-shrink-0">
+            <div className="sticky top-20 rounded-2xl border border-emerald-100/90 bg-gradient-to-b from-white via-slate-50/40 to-white p-5 shadow-[0_8px_40px_-12px_rgba(15,23,42,0.18)] ring-1 ring-slate-900/[0.04] backdrop-blur-sm">
+              <div className="mb-5 flex items-start justify-between gap-3 border-b border-slate-100 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white shadow-md shadow-emerald-900/20">
+                    <Sliders className="h-5 w-5" strokeWidth={2} />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold tracking-tight text-slate-900">Шүүлтүүр</h2>
+                    <p className="text-xs font-medium text-slate-500">Ангилал, дэлгүүр, брэнд, үнэ</p>
+                  </div>
+                </div>
+                <div className="flex flex-col items-end gap-1.5">
                   {activeFilters > 0 && (
-                    <button 
+                    <button
+                      type="button"
                       onClick={clearAllFilters}
-                      className="text-xs text-blue-600 hover:text-blue-800"
+                      className="text-xs font-semibold text-emerald-700 underline-offset-2 hover:text-emerald-900 hover:underline"
                     >
                       Цэвэрлэх
                     </button>
                   )}
                   <button
+                    type="button"
                     onClick={toggleExpandAll}
-                    className="text-xs text-gray-500 hover:text-gray-700"
+                    className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 transition hover:bg-slate-200"
                     title={expandedCategories.size === categories.length ? "Бүгдийг хаах" : "Бүгдийг дэлгэх"}
                   >
-                    {expandedCategories.size === categories.length ? "Хаах" : "Дэлгэх"}
+                    {expandedCategories.size === categories.length ? "Бүгдийг хаах" : "Бүгдийг дэлгэх"}
                   </button>
                 </div>
               </div>
-              
-              <div className="space-y-1 mb-5 max-h-[300px] overflow-y-auto pr-1">
-                {/* All Categories button */}
-                <button
-                  onClick={() => handleCategoryChange('all')}
-                  className={`w-full flex justify-between items-center px-2 py-1.5 rounded text-sm ${
-                    selectedCategory === 'all'
-                      ? 'bg-blue-50 text-blue-700 font-medium'
-                      : 'text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <span>Бүх бүтээгдэхүүн</span>
-                  <span className="text-xs text-gray-500">{totalProducts}</span>
-                </button>
-                
-                {/* Category tree */}
-                {renderCategoryTree(categories)}
-              </div>
 
-              <div className="mb-5">
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">Үнэ</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-gray-600">{formatPrice(priceStats.min)}</span>
-                    <span className="text-gray-600">{formatPrice(priceStats.max)}</span>
-                  </div>
-                  <div className="relative h-1">
-                    <div className="absolute w-full h-full bg-gray-200 rounded-full"></div>
-                    <div 
-                      className="absolute h-full bg-blue-600 rounded-full"
-                      style={{
-                        left: `${((priceRange[0] - priceStats.min) / (priceStats.max - priceStats.min)) * 100}%`,
-                        right: `${100 - ((priceRange[1] - priceStats.min) / (priceStats.max - priceStats.min)) * 100}%`
-                      }}
-                    ></div>
-                    <input
-                      type="range"
-                      min={priceStats.min}
-                      max={priceStats.max}
-                      step={Math.max(1, Math.round(priceStats.max / 1000))}
-                      value={priceRange[0]}
-                      onChange={(e) => setPriceRange([parseInt(e.target.value), priceRange[1]])}
-                      className="absolute w-full h-full opacity-0 cursor-pointer"
-                    />
-                    <input
-                      type="range"
-                      min={priceStats.min}
-                      max={priceStats.max}
-                      step={Math.max(1, Math.round(priceStats.max / 1000))}
-                      value={priceRange[1]}
-                      onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
-                      className="absolute w-full h-full opacity-0 cursor-pointer"
-                    />
-                  </div>
-                  <div className="text-xs text-gray-700 font-medium text-center">
-                    {formatPrice(priceRange[0])} - {formatPrice(priceRange[1])}
-                  </div>
+              <div className="mb-6">
+                <div className="mb-3 flex items-center gap-2">
+                  <span className="h-7 w-1 rounded-full bg-gradient-to-b from-emerald-500 to-teal-600" aria-hidden />
+                  <h3 className="text-base font-bold text-slate-900">Ангилал</h3>
+                </div>
+                <div className="max-h-[min(52vh,26rem)] space-y-1 overflow-y-auto pr-1 [scrollbar-width:thin]">
+                  <button
+                    type="button"
+                    onClick={() => handleCategoryChange("all")}
+                    className={`flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-[15px] font-medium transition ${
+                      selectedCategory === "all"
+                        ? "border-emerald-300 bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-900 shadow-sm"
+                        : "border-transparent text-slate-700 hover:border-slate-200 hover:bg-white"
+                    }`}
+                  >
+                    <span>Бүх бүтээгдэхүүн</span>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums ${
+                        selectedCategory === "all" ? "bg-emerald-600/15 text-emerald-800" : "bg-slate-100 text-slate-500"
+                      }`}
+                    >
+                      {totalProducts}
+                    </span>
+                  </button>
+                  {renderCategoryTree(categories)}
                 </div>
               </div>
 
-              {brands.length > 0 && (
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900 mb-3">Брэнд</h3>
-                  <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                    {brands.map(brand => (
-                      <label key={brand} className="flex items-center cursor-pointer group">
+              {retailStores.length > 0 && (
+                <div className="mb-6">
+                  <div className="mb-3 flex items-center gap-2">
+                    <Store className="h-4 w-4 text-emerald-700" strokeWidth={2} aria-hidden />
+                    <span className="h-7 w-1 rounded-full bg-gradient-to-b from-teal-500 to-cyan-600" aria-hidden />
+                    <h3 className="text-base font-bold text-slate-900">Дэлгүүр</h3>
+                  </div>
+                  <div className="max-h-48 space-y-2 overflow-y-auto pr-1 [scrollbar-width:thin]">
+                    {retailStores.map((store) => (
+                      <label
+                        key={store.id}
+                        className="group flex cursor-pointer items-center gap-3 rounded-xl border border-transparent px-2 py-2 transition hover:border-slate-200 hover:bg-white"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedStoreIds.includes(store.id)}
+                          onChange={() => handleStoreToggle(store.id)}
+                          className="h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                        />
+                        <span className="truncate text-[15px] font-medium text-slate-700 group-hover:text-slate-900">
+                          {store.name}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {brandFilterOptions.length > 0 && (
+                <div className="mb-6">
+                  <div className="mb-3 flex items-center gap-2">
+                    <Tag className="h-4 w-4 text-violet-700" strokeWidth={2} aria-hidden />
+                    <span className="h-7 w-1 rounded-full bg-gradient-to-b from-violet-500 to-purple-600" aria-hidden />
+                    <h3 className="text-base font-bold text-slate-900">Брэнд</h3>
+                  </div>
+                  <div className="max-h-56 space-y-2 overflow-y-auto pr-1 [scrollbar-width:thin]">
+                    {brandFilterOptions.map((brand) => (
+                      <label
+                        key={brand}
+                        className="group flex cursor-pointer items-center gap-3 rounded-xl border border-transparent px-2 py-2 transition hover:border-slate-200 hover:bg-white"
+                      >
                         <input
                           type="checkbox"
                           checked={selectedBrands.includes(brand)}
                           onChange={() => handleBrandToggle(brand)}
-                          className="w-3.5 h-3.5 text-blue-600 rounded border-gray-300 focus:ring-1 focus:ring-blue-500"
+                          className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
                         />
-                        <span className="ml-2 text-sm text-gray-700 group-hover:text-gray-900 truncate">
+                        <span className="truncate text-[15px] font-medium text-slate-700 group-hover:text-slate-900">
                           {brand}
                         </span>
                       </label>
@@ -740,6 +773,50 @@ const ProductListPageContent = () => {
                   </div>
                 </div>
               )}
+
+              <div className="mb-6 rounded-xl border border-slate-100 bg-white/80 p-4 shadow-inner">
+                <div className="mb-3 flex items-center gap-2">
+                  <span className="h-7 w-1 rounded-full bg-gradient-to-b from-indigo-500 to-violet-600" aria-hidden />
+                  <h3 className="text-base font-bold text-slate-900">Үнэ</h3>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex justify-between text-sm font-medium text-slate-600">
+                    <span>{formatPrice(priceStats.min)}</span>
+                    <span>{formatPrice(priceStats.max)}</span>
+                  </div>
+                  <div className="relative h-2.5">
+                    <div className="absolute h-full w-full rounded-full bg-slate-200/90" />
+                    <div
+                      className="absolute h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 shadow-sm"
+                      style={{
+                        left: `${((priceRange[0] - priceStats.min) / (priceStats.max - priceStats.min)) * 100}%`,
+                        right: `${100 - ((priceRange[1] - priceStats.min) / (priceStats.max - priceStats.min)) * 100}%`,
+                      }}
+                    />
+                    <input
+                      type="range"
+                      min={priceStats.min}
+                      max={priceStats.max}
+                      step={Math.max(1, Math.round(priceStats.max / 1000))}
+                      value={priceRange[0]}
+                      onChange={(e) => setPriceRange([parseInt(e.target.value, 10), priceRange[1]])}
+                      className="absolute h-full w-full cursor-pointer opacity-0"
+                    />
+                    <input
+                      type="range"
+                      min={priceStats.min}
+                      max={priceStats.max}
+                      step={Math.max(1, Math.round(priceStats.max / 1000))}
+                      value={priceRange[1]}
+                      onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value, 10)])}
+                      className="absolute h-full w-full cursor-pointer opacity-0"
+                    />
+                  </div>
+                  <div className="rounded-lg bg-slate-50 px-3 py-2 text-center text-sm font-semibold text-slate-800">
+                    {formatPrice(priceRange[0])} — {formatPrice(priceRange[1])}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -810,7 +887,7 @@ const ProductListPageContent = () => {
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5">
                   {products.map(product => {
                     if (!product) return null;
                     
@@ -828,12 +905,12 @@ const ProductListPageContent = () => {
                       >
                         <div className="relative aspect-square overflow-hidden bg-gray-100">
                           <img 
-                            src={product.thumbnail || (product.images && product.images[0]) || '/default-product.jpg'} 
+                            src={firstNonEmptyImg(product.thumbnail, product.images?.[0])} 
                             alt={displayName}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                             loading="lazy"
                             onError={(e) => {
-                              (e.target as HTMLImageElement).src = '/default-product.jpg';
+                              (e.target as HTMLImageElement).src = '/default.jpg';
                             }}
                           />
                           {discount > 0 && (
@@ -943,101 +1020,151 @@ const ProductListPageContent = () => {
       {/* Mobile Filters Drawer */}
       {showMobileFilters && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <div 
-            className="absolute inset-0 bg-black/20 backdrop-blur-sm"
+          <div
+            className="absolute inset-0 bg-slate-900/35 backdrop-blur-[2px]"
             onClick={() => setShowMobileFilters(false)}
+            aria-hidden
           />
-          <div className="absolute right-0 top-0 h-full w-80 bg-white shadow-xl animate-slideIn">
-            <div className="flex flex-col h-full">
-              <div className="flex items-center justify-between p-4 border-b">
-                <div>
-                  <h2 className="font-semibold text-gray-900">Шүүлтүүр</h2>
-                  <p className="text-xs text-gray-500">{products.length} бүтээгдэхүүн</p>
+          <div className="animate-slideIn absolute right-0 top-0 h-full w-[min(100vw-0.5rem,22rem)] max-w-[calc(100vw-8px)] border-l border-emerald-100/80 bg-gradient-to-b from-white to-slate-50 shadow-2xl sm:w-96">
+            <div className="flex h-full flex-col">
+              <div className="flex items-start justify-between gap-3 border-b border-slate-100 bg-white/90 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white shadow-md">
+                    <Sliders className="h-5 w-5" strokeWidth={2} />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-slate-900">Шүүлтүүр</h2>
+                    <p className="text-xs font-medium text-slate-500">{products.length} бүтээгдэхүүн</p>
+                  </div>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setShowMobileFilters(false)}
-                  className="p-1.5 hover:bg-gray-100 rounded"
+                  className="rounded-xl p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+                  aria-label="Хаах"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="h-5 w-5" />
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-4">
+              <div className="flex-1 overflow-y-auto p-4 [scrollbar-width:thin]">
                 <div className="mb-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-semibold text-gray-900">Ангилал</h3>
+                  <div className="mb-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="h-6 w-1 rounded-full bg-gradient-to-b from-emerald-500 to-teal-600" aria-hidden />
+                      <h3 className="text-base font-bold text-slate-900">Ангилал</h3>
+                    </div>
                     <button
+                      type="button"
                       onClick={toggleExpandAll}
-                      className="text-xs text-gray-500 hover:text-gray-700"
+                      className="rounded-lg bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600"
                     >
                       {expandedCategories.size === categories.length ? "Хаах" : "Дэлгэх"}
                     </button>
                   </div>
-                  <div className="space-y-1 max-h-[300px] overflow-y-auto">
+                  <div className="max-h-[min(45vh,20rem)] space-y-1 overflow-y-auto">
                     <button
-                      onClick={() => handleCategoryChange('all')}
-                      className={`w-full flex justify-between items-center px-2 py-1.5 rounded text-sm ${
-                        selectedCategory === 'all'
-                          ? 'bg-blue-50 text-blue-700 font-medium'
-                          : 'text-gray-700 hover:bg-gray-50'
+                      type="button"
+                      onClick={() => handleCategoryChange("all")}
+                      className={`flex w-full items-center justify-between rounded-xl border px-3 py-2.5 text-[15px] font-medium transition ${
+                        selectedCategory === "all"
+                          ? "border-emerald-300 bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-900"
+                          : "border-transparent text-slate-700 hover:bg-white"
                       }`}
                     >
                       <span>Бүх бүтээгдэхүүн</span>
-                      <span className="text-xs text-gray-500">{totalProducts}</span>
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                          selectedCategory === "all" ? "bg-emerald-600/15 text-emerald-800" : "bg-slate-100 text-slate-500"
+                        }`}
+                      >
+                        {totalProducts}
+                      </span>
                     </button>
                     {renderCategoryTree(categories)}
                   </div>
                 </div>
 
-                <div className="mb-6">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-3">Үнэ</h3>
-                  <div className="space-y-3">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-gray-600">{formatPrice(priceStats.min)}</span>
-                      <span className="text-gray-600">{formatPrice(priceStats.max)}</span>
+                {retailStores.length > 0 && (
+                  <div className="mb-6">
+                    <div className="mb-3 flex items-center gap-2">
+                      <Store className="h-4 w-4 text-emerald-700" strokeWidth={2} aria-hidden />
+                      <span className="h-6 w-1 rounded-full bg-gradient-to-b from-teal-500 to-cyan-600" aria-hidden />
+                      <h3 className="text-base font-bold text-slate-900">Дэлгүүр</h3>
                     </div>
-                    <div className="relative h-1">
-                      <div className="absolute w-full h-full bg-gray-200 rounded-full"></div>
-                      <div 
-                        className="absolute h-full bg-blue-600 rounded-full"
-                        style={{
-                          left: `${((priceRange[0] - priceStats.min) / (priceStats.max - priceStats.min)) * 100}%`,
-                          right: `${100 - ((priceRange[1] - priceStats.min) / (priceStats.max - priceStats.min)) * 100}%`
-                        }}
-                      ></div>
-                    </div>
-                    <div className="text-xs text-gray-700 font-medium text-center">
-                      {formatPrice(priceRange[0])} - {formatPrice(priceRange[1])}
-                    </div>
-                  </div>
-                </div>
-
-                {brands.length > 0 && (
-                  <div>
-                    <h3 className="text-sm font-semibold text-gray-900 mb-3">Брэнд</h3>
-                    <div className="space-y-1.5">
-                      {brands.map(brand => (
-                        <label key={brand} className="flex items-center cursor-pointer">
+                    <div className="max-h-40 space-y-2 overflow-y-auto">
+                      {retailStores.map((store) => (
+                        <label key={store.id} className="flex cursor-pointer items-center gap-3 rounded-xl px-1 py-1.5">
                           <input
                             type="checkbox"
-                            checked={selectedBrands.includes(brand)}
-                            onChange={() => handleBrandToggle(brand)}
-                            className="w-3.5 h-3.5 text-blue-600 rounded border-gray-300"
+                            checked={selectedStoreIds.includes(store.id)}
+                            onChange={() => handleStoreToggle(store.id)}
+                            className="h-4 w-4 rounded border-slate-300 text-teal-600"
                           />
-                          <span className="ml-2 text-sm text-gray-700 truncate">{brand}</span>
+                          <span className="truncate text-[15px] font-medium text-slate-700">{store.name}</span>
                         </label>
                       ))}
                     </div>
                   </div>
                 )}
+
+                {brandFilterOptions.length > 0 && (
+                  <div className="mb-6">
+                    <div className="mb-3 flex items-center gap-2">
+                      <Tag className="h-4 w-4 text-violet-700" strokeWidth={2} aria-hidden />
+                      <span className="h-6 w-1 rounded-full bg-gradient-to-b from-violet-500 to-purple-600" aria-hidden />
+                      <h3 className="text-base font-bold text-slate-900">Брэнд</h3>
+                    </div>
+                    <div className="max-h-48 space-y-2 overflow-y-auto">
+                      {brandFilterOptions.map((brand) => (
+                        <label key={brand} className="flex cursor-pointer items-center gap-3 rounded-xl px-1 py-1.5">
+                          <input
+                            type="checkbox"
+                            checked={selectedBrands.includes(brand)}
+                            onChange={() => handleBrandToggle(brand)}
+                            className="h-4 w-4 rounded border-slate-300 text-emerald-600"
+                          />
+                          <span className="truncate text-[15px] font-medium text-slate-700">{brand}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="mb-6 rounded-xl border border-slate-100 bg-white/90 p-4 shadow-inner">
+                  <div className="mb-3 flex items-center gap-2">
+                    <span className="h-6 w-1 rounded-full bg-gradient-to-b from-indigo-500 to-violet-600" aria-hidden />
+                    <h3 className="text-base font-bold text-slate-900">Үнэ</h3>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-sm font-medium text-slate-600">
+                      <span>{formatPrice(priceStats.min)}</span>
+                      <span>{formatPrice(priceStats.max)}</span>
+                    </div>
+                    <div className="relative h-2.5">
+                      <div className="absolute h-full w-full rounded-full bg-slate-200/90" />
+                      <div
+                        className="absolute h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-600"
+                        style={{
+                          left: `${((priceRange[0] - priceStats.min) / (priceStats.max - priceStats.min)) * 100}%`,
+                          right: `${100 - ((priceRange[1] - priceStats.min) / (priceStats.max - priceStats.min)) * 100}%`,
+                        }}
+                      />
+                    </div>
+                    <div className="rounded-lg bg-slate-50 px-2 py-2 text-center text-sm font-semibold text-slate-800">
+                      {formatPrice(priceRange[0])} — {formatPrice(priceRange[1])}
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="p-4 border-t">
+              <div className="border-t border-slate-100 bg-white/95 p-4">
                 <button
+                  type="button"
                   onClick={() => setShowMobileFilters(false)}
-                  className="w-full py-2.5 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700"
+                  className="w-full rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-900/25 transition hover:from-emerald-700 hover:to-teal-800"
                 >
-                  Харах ({products.length})
+                  Үр дүн харах ({products.length})
                 </button>
               </div>
             </div>
@@ -1068,7 +1195,7 @@ export default function ProductListPage() {
     <Suspense fallback={
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <div className="container mx-auto px-3 sm:px-4 py-6 pt-6">
+        <div className="mx-auto w-full max-w-layout px-3 py-6 pt-6">
           <div className="flex items-center justify-center h-96">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>

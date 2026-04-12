@@ -7,6 +7,7 @@ import { Button } from '@/app/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/app/components/ui/radio-group';
 import { Label } from '@/app/components/ui/label';
 import PaymentAppLink from './PaymentAppLink';
+import { getPublicApiBase } from '@/app/lib/apiBase';
 
 interface BankAccount {
   id: number;
@@ -74,8 +75,7 @@ const Step2Content = ({
     const fetchBankAccounts = async () => {
       try {
         setLoadingBankAccounts(true);
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-        const response = await fetch(`${API_URL}/bank-accounts/active`);
+        const response = await fetch(`${getPublicApiBase()}/bank-accounts/active`);
         
         if (!response.ok) {
           throw new Error('Failed to fetch bank accounts');
@@ -160,10 +160,10 @@ const Step2Content = ({
                   <div className="mb-6">
                     <p className="text-sm text-gray-600 mb-2">Төлбөрийн дүн: <span className="font-bold text-gray-900">{formatPrice(total)}</span></p>
                     <p className="text-sm text-gray-600 mb-4">Доорх QR кодыг QPay апп-аар уншуулна уу</p>
-                    {qrCode ? (
+                    {qrCode?.trim() ? (
                       <div className="inline-block p-4 bg-white border border-gray-200 rounded-lg">
                         <img 
-                          src={qrCode} 
+                          src={qrCode.trim()} 
                           alt="QPay QR Code" 
                           className="w-48 h-48 mx-auto object-contain"
                           onError={(e) => {

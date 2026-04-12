@@ -2,6 +2,7 @@
 
 import { Product, ProductVariation } from "../lib/types";
 import { useState, useEffect } from "react";
+import { firstNonEmptyImg, safeImgSrc } from "../lib/imageSrc";
 
 interface ProductCardProps {
   product: Product;
@@ -39,29 +40,28 @@ const ProductCard: React.FC<ProductCardProps> = ({
       : product.images;
 
   const fallbackImage = product.thumbnail;
-  const firstImage = displayImages?.[0] || fallbackImage;
+  const firstImage = firstNonEmptyImg(
+    displayImages?.[0],
+    fallbackImage,
+    product.images?.[0]
+  );
 
   const [imageUrl, setImageUrl] = useState(firstImage);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!firstImage) {
-      setImageUrl(fallbackImage);
-      setLoading(false);
-      return;
-    }
-
+    const resolved = firstNonEmptyImg(firstImage, fallbackImage, product.images?.[0]);
     const img = new Image();
     img.onload = () => {
-      setImageUrl(firstImage);
+      setImageUrl(safeImgSrc(resolved));
       setLoading(false);
     };
     img.onerror = () => {
-      setImageUrl(fallbackImage);
+      setImageUrl(safeImgSrc(fallbackImage));
       setLoading(false);
     };
-    img.src = firstImage;
-  }, [firstImage]);
+    img.src = resolved;
+  }, [firstImage, fallbackImage, product.images]);
 
   // -------------------------
   //  LIST VIEW REMAINS SAME
@@ -91,7 +91,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
           </div>
         ) : (
           <img
-            src={imageUrl}
+            src={safeImgSrc(imageUrl)}
             alt={displayName}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />

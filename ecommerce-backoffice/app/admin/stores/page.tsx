@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Edit, Trash, Loader2, Tag } from "lucide-react";
+import { Plus, Edit, Trash, Loader2, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,37 +21,39 @@ import { Textarea } from "@/components/ui/textarea";
 const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "dgpk9aqnc";
 const CLOUDINARY_UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "ml_default";
 
-interface BrandRow {
+interface StoreRow {
   id: string;
   name: string;
-  slug: string | null;
-  logoUrl: string | null;
-  description: string | null;
+  address: string | null;
+  phone: string | null;
+  hours: string | null;
+  imageUrl: string | null;
   sortOrder: number;
   isActive: boolean;
   created_at?: string;
   updated_at?: string;
 }
 
-export default function AdminBrandsPage() {
+export default function AdminStoresPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [rows, setRows] = useState<BrandRow[]>([]);
+  const [rows, setRows] = useState<StoreRow[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<BrandRow | null>(null);
+  const [editing, setEditing] = useState<StoreRow | null>(null);
   const [form, setForm] = useState({
     name: "",
-    slug: "",
-    logoUrl: "",
-    description: "",
+    address: "",
+    phone: "",
+    hours: "",
+    imageUrl: "",
     sortOrder: 0,
     isActive: true,
   });
 
-  const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/brands`;
+  const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/retail-stores`;
 
   const getAuthToken = () =>
     typeof window !== "undefined" ? localStorage.getItem("token") : null;
@@ -61,7 +63,7 @@ export default function AdminBrandsPage() {
       const fd = new FormData();
       fd.append("file", file);
       fd.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
-      fd.append("folder", "brands");
+      fd.append("folder", "stores");
       const xhr = new XMLHttpRequest();
       xhr.addEventListener("load", () => {
         if (xhr.status === 200) {
@@ -90,7 +92,7 @@ export default function AdminBrandsPage() {
   };
 
   useEffect(() => {
-    document.title = "Брэндүүд | Admin";
+    document.title = "Дэлгүүрүүд | Admin";
     fetchRows();
   }, []);
 
@@ -98,24 +100,26 @@ export default function AdminBrandsPage() {
     setEditing(null);
     setForm({
       name: "",
-      slug: "",
-      logoUrl: "",
-      description: "",
+      address: "",
+      phone: "",
+      hours: "",
+      imageUrl: "",
       sortOrder: 0,
       isActive: true,
     });
     setDialogOpen(true);
   };
 
-  const openEdit = (b: BrandRow) => {
-    setEditing(b);
+  const openEdit = (s: StoreRow) => {
+    setEditing(s);
     setForm({
-      name: b.name,
-      slug: b.slug || "",
-      logoUrl: b.logoUrl || "",
-      description: b.description || "",
-      sortOrder: b.sortOrder ?? 0,
-      isActive: b.isActive,
+      name: s.name,
+      address: s.address || "",
+      phone: s.phone || "",
+      hours: s.hours || "",
+      imageUrl: s.imageUrl || "",
+      sortOrder: s.sortOrder ?? 0,
+      isActive: s.isActive,
     });
     setDialogOpen(true);
   };
@@ -131,9 +135,10 @@ export default function AdminBrandsPage() {
       const token = getAuthToken();
       const body = {
         name: form.name.trim(),
-        slug: form.slug.trim() || null,
-        logoUrl: form.logoUrl || null,
-        description: form.description || null,
+        address: form.address || null,
+        phone: form.phone || null,
+        hours: form.hours || null,
+        imageUrl: form.imageUrl || null,
         sortOrder: form.sortOrder,
         isActive: form.isActive,
       };
@@ -185,17 +190,17 @@ export default function AdminBrandsPage() {
     <div className="space-y-6 p-4 md:p-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-600 text-white shadow">
-            <Tag className="h-6 w-6" />
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-700 text-white shadow">
+            <Store className="h-6 w-6" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Брэндүүд</h1>
-            <p className="text-sm text-muted-foreground">Каталогийн брэндүүдийг удирдах</p>
+            <h1 className="text-2xl font-bold tracking-tight">Дэлгүүрүүд</h1>
+            <p className="text-sm text-muted-foreground">Борлуулалтын цэг, салбарууд</p>
           </div>
         </div>
         <Button onClick={openCreate}>
           <Plus className="mr-2 h-4 w-4" />
-          Брэнд нэмэх
+          Дэлгүүр нэмэх
         </Button>
       </div>
 
@@ -219,24 +224,28 @@ export default function AdminBrandsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Нэр</TableHead>
-                <TableHead>Slug</TableHead>
+                <TableHead>Утас</TableHead>
+                <TableHead>Хаяг</TableHead>
                 <TableHead>Эрэмбэ</TableHead>
                 <TableHead>Төлөв</TableHead>
                 <TableHead className="text-right">Үйлдэл</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map((b) => (
-                <TableRow key={b.id}>
-                  <TableCell className="font-medium">{b.name}</TableCell>
-                  <TableCell className="text-muted-foreground">{b.slug || "—"}</TableCell>
-                  <TableCell>{b.sortOrder}</TableCell>
-                  <TableCell>{b.isActive ? "Идэвхтэй" : "Идэвхгүй"}</TableCell>
+              {rows.map((s) => (
+                <TableRow key={s.id}>
+                  <TableCell className="font-medium">{s.name}</TableCell>
+                  <TableCell>{s.phone || "—"}</TableCell>
+                  <TableCell className="max-w-[200px] truncate text-muted-foreground">
+                    {s.address || "—"}
+                  </TableCell>
+                  <TableCell>{s.sortOrder}</TableCell>
+                  <TableCell>{s.isActive ? "Идэвхтэй" : "Идэвхгүй"}</TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => openEdit(b)}>
+                    <Button variant="ghost" size="icon" onClick={() => openEdit(s)}>
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(b.id)}>
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(s.id)}>
                       <Trash className="h-4 w-4 text-destructive" />
                     </Button>
                   </TableCell>
@@ -245,7 +254,7 @@ export default function AdminBrandsPage() {
             </TableBody>
           </Table>
           {rows.length === 0 && (
-            <p className="py-8 text-center text-sm text-muted-foreground">Брэнд байхгүй байна.</p>
+            <p className="py-8 text-center text-sm text-muted-foreground">Дэлгүүр байхгүй байна.</p>
           )}
         </CardContent>
       </Card>
@@ -253,8 +262,8 @@ export default function AdminBrandsPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>{editing ? "Брэнд засах" : "Шинэ брэнд"}</DialogTitle>
-            <DialogDescription>Лого, нэр, эрэмбэ зэргийг тохируулна уу.</DialogDescription>
+            <DialogTitle>{editing ? "Дэлгүүр засах" : "Шинэ дэлгүүр"}</DialogTitle>
+            <DialogDescription>Хаяг, цагийн хуваарь зэргийг оруулна уу.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-2">
             <div className="grid gap-2">
@@ -266,34 +275,51 @@ export default function AdminBrandsPage() {
               />
             </div>
             <div className="grid gap-2">
-              <Label>Slug</Label>
+              <Label>Утас</Label>
               <Input
-                value={form.slug}
-                onChange={(e) => setForm({ ...form, slug: e.target.value })}
-                placeholder="optional-slug"
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
                 disabled={saving}
               />
             </div>
             <div className="grid gap-2">
-              <Label>Лого URL</Label>
+              <Label>Хаяг</Label>
+              <Textarea
+                value={form.address}
+                onChange={(e) => setForm({ ...form, address: e.target.value })}
+                rows={2}
+                disabled={saving}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label>Ажиллах цаг</Label>
+              <Input
+                value={form.hours}
+                onChange={(e) => setForm({ ...form, hours: e.target.value })}
+                placeholder="Ж ням 10:00–20:00"
+                disabled={saving}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label>Зураг URL</Label>
               <div className="flex gap-2">
                 <Input
-                  value={form.logoUrl}
-                  onChange={(e) => setForm({ ...form, logoUrl: e.target.value })}
+                  value={form.imageUrl}
+                  onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
                   disabled={saving || uploading}
                 />
                 <input
                   type="file"
                   accept="image/*"
                   className="hidden"
-                  id="brand-logo-upload"
+                  id="store-img-upload"
                   onChange={async (e) => {
                     const f = e.target.files?.[0];
                     if (!f) return;
                     try {
                       setUploading(true);
                       const url = await uploadToCloudinary(f);
-                      setForm((prev) => ({ ...prev, logoUrl: url }));
+                      setForm((prev) => ({ ...prev, imageUrl: url }));
                     } catch {
                       setError("Зураг оруулахад алдаа");
                     } finally {
@@ -305,20 +331,11 @@ export default function AdminBrandsPage() {
                   type="button"
                   variant="secondary"
                   disabled={uploading}
-                  onClick={() => document.getElementById("brand-logo-upload")?.click()}
+                  onClick={() => document.getElementById("store-img-upload")?.click()}
                 >
                   {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Оруулах"}
                 </Button>
               </div>
-            </div>
-            <div className="grid gap-2">
-              <Label>Тайлбар</Label>
-              <Textarea
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                rows={3}
-                disabled={saving}
-              />
             </div>
             <div className="grid gap-2">
               <Label>Эрэмбэ</Label>
@@ -331,12 +348,12 @@ export default function AdminBrandsPage() {
             </div>
             <div className="flex items-center gap-2">
               <Checkbox
-                id="brand-active"
+                id="store-active"
                 checked={form.isActive}
                 onCheckedChange={(c) => setForm({ ...form, isActive: c === true })}
                 disabled={saving}
               />
-              <Label htmlFor="brand-active">Идэвхтэй</Label>
+              <Label htmlFor="store-active">Идэвхтэй</Label>
             </div>
           </div>
           <DialogFooter>

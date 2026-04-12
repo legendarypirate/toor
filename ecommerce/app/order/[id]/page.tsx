@@ -19,6 +19,7 @@ import Footer from '../../components/Footer';
 import Link from 'next/link';
 import { useAuth } from '../../context/AuthContext';
 import { apiService } from '../../services/api';
+import { safeImgSrc } from '@/app/lib/imageSrc';
 
 interface OrderItem {
   id: number;
@@ -63,7 +64,7 @@ const OrderDetailPage = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    document.title = 'Захиалгын дэлгэрэнгүй | TSAAS';
+    document.title = 'Захиалгын дэлгэрэнгүй | Outdoor World';
   }, []);
 
   useEffect(() => {
@@ -160,7 +161,7 @@ const OrderDetailPage = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <div className="container mx-auto px-4 py-12">
+        <div className="mx-auto w-full max-w-layout px-3 py-12">
           <div className="text-center">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
             <p className="mt-4 text-gray-600">Ачааллаж байна...</p>
@@ -175,7 +176,7 @@ const OrderDetailPage = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <div className="container mx-auto px-4 py-12">
+        <div className="mx-auto w-full max-w-layout px-3 py-12">
           <div className="max-w-4xl mx-auto">
             <Link
               href="/orders"
@@ -210,7 +211,7 @@ const OrderDetailPage = () => {
     <div className="min-h-screen bg-gray-50">
       <Header />
       
-      <div className="container mx-auto px-4 py-8">
+      <div className="mx-auto w-full max-w-layout px-3 py-8">
         <div className="max-w-4xl mx-auto">
           {/* Back Button */}
           <Link
@@ -254,13 +255,13 @@ const OrderDetailPage = () => {
               <div className="space-y-4">
                 {order.items.map((item) => (
                   <div key={item.id} className="flex items-start gap-4 pb-4 border-b border-gray-100 last:border-0">
-                    {item.image && (
+                    {item.image?.trim() ? (
                       <img
-                        src={item.image}
+                        src={safeImgSrc(item.image)}
                         alt={item.name_mn || item.name}
                         className="w-20 h-20 object-cover rounded-lg"
                       />
-                    )}
+                    ) : null}
                     <div className="flex-1">
                       <h3 className="font-medium text-gray-900 mb-1">
                         {item.name_mn || item.name}

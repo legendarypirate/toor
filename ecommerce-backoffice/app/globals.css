@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "react-quill/dist/quill.snow.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -122,25 +121,15 @@
   }
 }
 
-/* ReactQuill Editor Styling */
-.quill {
-  @apply rounded-md border border-gray-300 bg-white;
+/* Tiptap */
+.tiptap-editor-content .ProseMirror {
+  min-height: var(--tiptap-min-height, 150px);
+  outline: none;
 }
-
-.quill .ql-toolbar {
-  @apply border-b border-gray-300 rounded-t-md bg-gray-50;
-}
-
-.quill .ql-container {
-  @apply rounded-b-md border-0;
-  min-height: 150px;
-}
-
-.quill .ql-editor {
-  @apply text-sm;
-  min-height: 150px;
-}
-
-.quill .ql-editor.ql-blank::before {
-  @apply text-gray-400 italic;
+.tiptap-editor-content .ProseMirror p.is-editor-empty:first-child::before {
+  color: var(--muted-foreground);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
 }

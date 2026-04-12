@@ -64,6 +64,11 @@ module.exports = (sequelize, Sequelize) => {
         brand: {
             type: Sequelize.STRING
         },
+        retailStoreId: {
+            type: Sequelize.UUID,
+            allowNull: true,
+            field: "retail_store_id",
+        },
         description: {
             type: Sequelize.TEXT
         },

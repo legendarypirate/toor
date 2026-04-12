@@ -23,7 +23,7 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    document.title = 'Бүртгүүлэх | TSAAS';
+    document.title = 'Бүртгүүлэх | Outdoor World';
   }, []);
 
   const handleClose = () => {

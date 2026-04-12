@@ -18,9 +18,9 @@ const PaymentAppLink = memo(({ url, index }: PaymentAppLinkProps) => {
       rel="noopener noreferrer"
       className="flex flex-col items-center gap-2 p-3 bg-white border border-gray-200 rounded-lg hover:border-gray-900 hover:shadow-md transition-all"
     >
-      {url.logo && !logoError ? (
+      {url.logo?.trim() && !logoError ? (
         <img 
-          src={url.logo} 
+          src={url.logo.trim()} 
           alt={url.name || url.description || 'Payment app'}
           className="w-12 h-12 object-contain rounded-lg"
           onError={() => setLogoError(true)}

@@ -46,6 +46,8 @@ db.complaints = require("./complaint.model.js")(sequelize, Sequelize);
 db.call_sales_activities = require("./call_sales_activity.model.js")(sequelize, Sequelize);
 db.gift_settings = require("./gift_setting.model.js")(sequelize, Sequelize);
 db.partners = require("./partner.model.js")(sequelize, Sequelize);
+db.brands = require("./brand.model.js")(sequelize, Sequelize);
+db.retail_stores = require("./store.model.js")(sequelize, Sequelize);
 
 // CRM models
 db.customers = require("./customer.model.js")(sequelize, Sequelize);

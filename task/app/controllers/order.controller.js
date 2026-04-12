@@ -808,7 +808,7 @@ exports.findAll = (req, res) => {
     });
 };
 
-// Create invoice (persist address / invoice_data on order)
+// Create invoice (update order with invoice/shipping fields)
 exports.createInvoice = async (req, res) => {
   try {
     const { orderId } = req.params;

@@ -2,6 +2,7 @@
 
 import { useMemo, memo, useCallback } from 'react';
 import { Package, Shield, Truck, Clock } from 'lucide-react';
+import { safeImgSrc } from '@/app/lib/imageSrc';
 
 interface OrderSummaryProps {
   cartItems: any[];
@@ -83,13 +84,13 @@ const OrderSummary = ({
             <div key={`${item.id}-${item.selectedSize || ''}-${item.selectedColor || ''}-${index}`} className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center overflow-hidden">
-                  {item.product.image ? (
+                  {item.product.image?.trim() ? (
                     <img 
-                      src={item.product.image} 
+                      src={safeImgSrc(item.product.image)} 
                       alt={item.product.name}
                       className="w-full h-full object-cover"
                       onError={(e) => {
-                        e.currentTarget.src = '/placeholder.jpg';
+                        e.currentTarget.src = '/default.jpg';
                       }}
                     />
                   ) : (

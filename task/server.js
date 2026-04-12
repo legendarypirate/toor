@@ -99,6 +99,8 @@ require('./app/routes/complaint.routes')(app);
 require('./app/routes/call_sales_activity.routes')(app);
 require('./app/routes/gift_setting.routes')(app);
 require('./app/routes/partner.routes')(app);
+require('./app/routes/brand.routes')(app);
+require('./app/routes/retail_store.routes')(app);
 
 // CRM routes
 require('./app/routes/crm/dashboard.routes')(app);

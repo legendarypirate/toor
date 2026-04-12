@@ -7,6 +7,8 @@ import Footer from '../components/Footer';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCart } from '../context/CartContext';
+import { showAppMessage } from '@/app/lib/appMessage';
+import { firstNonEmptyImg, safeImgSrc } from '@/app/lib/imageSrc';
 
 const WishlistPage = () => {
   const [isClient, setIsClient] = useState(false);
@@ -21,7 +23,7 @@ const WishlistPage = () => {
 
   useEffect(() => {
     setIsClient(true);
-    document.title = 'Хүслийн жагсаалт | TSAAS';
+    document.title = 'Хүслийн жагсаалт | Outdoor World';
   }, []);
 
   // Format price
@@ -91,9 +93,9 @@ const WishlistPage = () => {
     
     const result = addToCart(cartItem);
     if (result.alreadyExists) {
-      showToast('энэ бараа сагсанд байна', 'warning');
+      showAppMessage('энэ бараа сагсанд байна', 'warning');
     } else if (result.success) {
-      showToast(`${item.product.nameMn} сагсанд нэмэгдлээ`, 'success');
+      showAppMessage(`${item.product.nameMn} сагсанд нэмэгдлээ`, 'success');
     }
   };
 
@@ -134,11 +136,11 @@ const WishlistPage = () => {
     });
     
     if (addedCount > 0 && alreadyExistsCount === 0) {
-      showToast(`${addedCount} бараа сагсанд нэмэгдлээ`, 'success');
+      showAppMessage(`${addedCount} бараа сагсанд нэмэгдлээ`, 'success');
     } else if (addedCount > 0 && alreadyExistsCount > 0) {
-      showToast(`${addedCount} бараа нэмэгдлээ, ${alreadyExistsCount} бараа сагсанд байна`, 'warning');
+      showAppMessage(`${addedCount} бараа нэмэгдлээ, ${alreadyExistsCount} бараа сагсанд байна`, 'warning');
     } else if (alreadyExistsCount > 0) {
-      showToast('Эдгээр бараа сагсанд байна', 'warning');
+      showAppMessage('Эдгээр бараа сагсанд байна', 'warning');
     }
   };
 
@@ -149,10 +151,10 @@ const WishlistPage = () => {
     // Call context function
     if (typeof contextRemoveFromWishlist === 'function') {
       contextRemoveFromWishlist(id);
-      showToast('Бүтээгдэхүүн хүслийн жагсаалтаас хасагдлаа', 'success');
+      showAppMessage('Бүтээгдэхүүн хүслийн жагсаалтаас хасагдлаа', 'success');
     } else {
       console.error('contextRemoveFromWishlist is not a function');
-      showToast('Алдаа гарлаа. Дахин оролдоно уу.', 'error');
+      showAppMessage('Алдаа гарлаа. Дахин оролдоно уу.', 'error');
     }
   };
 
@@ -166,7 +168,7 @@ const WishlistPage = () => {
         }
       });
       
-      showToast('Хүслийн жагсаалт цэвэрлэгдлээ', 'success');
+      showAppMessage('Хүслийн жагсаалт цэвэрлэгдлээ', 'success');
     }
   };
 
@@ -174,7 +176,7 @@ const WishlistPage = () => {
   const handleToggleWishlist = (product: any) => {
     if (isInWishlist(product.id)) {
       contextRemoveFromWishlist(product.id);
-      showToast('Бүтээгдэхүүн хүслийн жагсаалтаас хасагдлаа', 'success');
+      showAppMessage('Бүтээгдэхүүн хүслийн жагсаалтаас хасагдлаа', 'success');
     } else {
       addToWishlist({
         id: product.id,
@@ -191,7 +193,7 @@ const WishlistPage = () => {
         },
         addedAt: new Date().toISOString()
       });
-      showToast('Бүтээгдэхүүн хүслийн жагсаалтанд нэмэгдлээ', 'success');
+      showAppMessage('Бүтээгдэхүүн хүслийн жагсаалтанд нэмэгдлээ', 'success');
     }
   };
 
@@ -204,40 +206,6 @@ const WishlistPage = () => {
       month: '2-digit',
       day: '2-digit',
     });
-  };
-
-  // Show toast
-  const showToast = (message: string, type: 'success' | 'error' | 'warning' = 'success') => {
-    if (!isClient) return;
-    
-    const toast = document.createElement('div');
-    toast.className = `fixed top-[100px] right-4 z-50 px-4 py-3 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full ${
-      type === 'success' ? 'bg-green-50 border border-green-200 text-green-800' :
-      type === 'error' ? 'bg-red-50 border border-red-200 text-red-800' :
-      'bg-yellow-50 border border-yellow-200 text-yellow-800'
-    }`;
-    
-    toast.innerHTML = `
-      <div class="flex items-center">
-        <div class="mr-3">
-          ${type === 'success' ? '✅' : type === 'error' ? '❌' : '⚠️'}
-        </div>
-        <div class="font-medium">${message}</div>
-      </div>
-    `;
-    
-    document.body.appendChild(toast);
-    
-    setTimeout(() => {
-      toast.classList.remove('translate-x-full');
-    }, 10);
-    
-    setTimeout(() => {
-      toast.classList.add('translate-x-full');
-      setTimeout(() => {
-        document.body.removeChild(toast);
-      }, 300);
-    }, 3000);
   };
 
   // Calculate stats
@@ -304,7 +272,7 @@ const WishlistPage = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <div className="container mx-auto px-4 py-8">
+        <div className="mx-auto w-full max-w-layout px-3 py-8">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-200 rounded w-64 mb-4"></div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -328,7 +296,7 @@ const WishlistPage = () => {
       <div className="min-h-screen bg-gray-50">
         <Header />
         
-        <div className="container mx-auto px-4 py-12">
+        <div className="mx-auto w-full max-w-layout px-3 py-12">
           <div className="max-w-md mx-auto text-center">
             <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <Heart className="w-12 h-12 text-gray-400" />
@@ -367,7 +335,7 @@ const WishlistPage = () => {
     <div className="min-h-screen bg-gray-50">
       <Header />
       
-      <div className="container mx-auto px-4 py-8">
+      <div className="mx-auto w-full max-w-layout px-3 py-8">
         {/* Page Header with Stats */}
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
@@ -446,7 +414,7 @@ const WishlistPage = () => {
               if (productId) {
                 router.push(`/product/${productId}`);
               } else {
-                showToast('Бүтээгдэхүүний ID олдсонгүй', 'error');
+                showAppMessage('Бүтээгдэхүүний ID олдсонгүй', 'error');
               }
             };
 
@@ -462,11 +430,11 @@ const WishlistPage = () => {
                 <div className="relative">
                   <div className="aspect-square bg-gray-100">
                     <img
-                      src={item.product.image || item.product.thumbnail}
+                      src={firstNonEmptyImg(item.product.image, item.product.thumbnail)}
                       alt={item.product.nameMn}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       onError={(e) => {
-                        e.currentTarget.src = '/placeholder.jpg';
+                        e.currentTarget.src = '/default.jpg';
                       }}
                     />
                   </div>
@@ -547,7 +515,7 @@ const WishlistPage = () => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          showToast('Бүтээгдэхүний ID олдсонгүй', 'error');
+                          showAppMessage('Бүтээгдэхүний ID олдсонгүй', 'error');
                         }}
                         className="flex-1 py-2 border border-gray-300 text-gray-700 rounded text-sm font-medium hover:bg-gray-50 flex items-center justify-center gap-2 opacity-50 cursor-not-allowed"
                         disabled
@@ -630,7 +598,7 @@ const WishlistPage = () => {
                   <div className="relative">
                     <div className="aspect-square bg-gray-100">
                       <img
-                        src={product.image}
+                        src={safeImgSrc(product.image)}
                         alt={product.nameMn}
                         className="w-full h-full object-cover"
                       />

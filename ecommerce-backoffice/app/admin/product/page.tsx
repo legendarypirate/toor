@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { Plus, Edit, Eye, Trash, Upload, X, ChevronLeft, Minus, Copy, Package, Check, AlertCircle, Loader2, ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,137 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import dynamic from "next/dynamic";
-
-// Polyfill for findDOMNode to support React 19 compatibility with react-quill
-// This is a workaround for react-quill's use of the deprecated findDOMNode API
-if (typeof window !== "undefined") {
-  try {
-    const ReactDOM = require("react-dom");
-    if (ReactDOM && !ReactDOM.findDOMNode) {
-      ReactDOM.findDOMNode = function(componentOrElement: any): Element | Text | null {
-        if (componentOrElement == null) {
-          return null;
-        }
-        // If it's already a DOM node, return it
-        if (componentOrElement.nodeType === 1 || componentOrElement.nodeType === 3) {
-          return componentOrElement;
-        }
-        // Try to find the DOM node from React's internal structure (React 19)
-        if (componentOrElement && typeof componentOrElement === "object") {
-          // React 19 uses different internal structure
-          const reactInternalInstance = (componentOrElement as any)._reactInternalInstance || 
-                                       (componentOrElement as any)._reactInternalFiber ||
-                                       (componentOrElement as any).__reactInternalInstance ||
-                                       (componentOrElement as any).__reactFiber$;
-          
-          if (reactInternalInstance) {
-            let fiber: any = reactInternalInstance;
-            while (fiber) {
-              if (fiber.stateNode) {
-                const node = fiber.stateNode;
-                if (node && (node.nodeType === 1 || node.nodeType === 3)) {
-                  return node;
-                }
-              }
-              fiber = fiber.return || fiber.owner;
-            }
-          }
-          // Fallback: try to get from refs if available
-          if ((componentOrElement as any).refs) {
-            const refs = (componentOrElement as any).refs;
-            const firstRefKey = Object.keys(refs)[0];
-            if (firstRefKey && refs[firstRefKey] && refs[firstRefKey].nodeType) {
-              return refs[firstRefKey];
-            }
-          }
-        }
-        return null;
-      };
-    }
-  } catch (e) {
-    // Silently fail if ReactDOM is not available
-    console.warn("Could not polyfill findDOMNode:", e);
-  }
-}
-
-// Dynamically import ReactQuill to avoid SSR issues
-// Using a more robust dynamic import with loading state
-const ReactQuill = dynamic(
-  async () => {
-    const { default: RQ } = await import("react-quill");
-    // Import CSS dynamically
-    if (typeof window !== "undefined") {
-      const link = document.createElement("link");
-      link.rel = "stylesheet";
-      link.href = "https://cdn.quilljs.com/1.3.6/quill.snow.css";
-      document.head.appendChild(link);
-    }
-    return RQ;
-  },
-  { 
-    ssr: false,
-    loading: () => (
-      <div className="min-h-[150px] border border-gray-300 rounded-md p-3 bg-white">
-        <textarea
-          className="w-full h-full min-h-[150px] resize-none border-none outline-none"
-          placeholder="Loading editor..."
-          disabled
-        />
-      </div>
-    )
-  }
-);
-
-// Client-side wrapper for ReactQuill to prevent findDOMNode errors
-interface QuillEditorProps {
-  value?: string;
-  onChange?: (value: string) => void;
-  placeholder?: string;
-  theme?: string;
-  modules?: any;
-  formats?: string[];
-  style?: React.CSSProperties;
-  [key: string]: any;
-}
-
-const QuillEditor = React.forwardRef<any, QuillEditorProps>(
-  ({ value, onChange, placeholder, ...props }, ref) => {
-    const [isMounted, setIsMounted] = useState(false);
-    const editorRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-      setIsMounted(true);
-    }, []);
-
-    if (!isMounted) {
-      return (
-        <div className="min-h-[150px] border border-gray-300 rounded-md p-3 bg-white">
-          <textarea
-            className="w-full h-full min-h-[150px] resize-none border-none outline-none"
-            value={value || ""}
-            onChange={(e) => onChange?.(e.target.value)}
-            placeholder={placeholder}
-            disabled
-          />
-        </div>
-      );
-    }
-
-    return (
-      <div ref={editorRef} className="quill-wrapper">
-        <ReactQuill 
-          value={value} 
-          onChange={onChange} 
-          placeholder={placeholder} 
-          {...props} 
-        />
-      </div>
-    );
-  }
-);
-
-QuillEditor.displayName = "QuillEditor";
+import { TiptapEditor } from "@/components/editor/TiptapEditor";
 
 // Simple Textarea component
 const Textarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>(
@@ -1220,27 +1090,12 @@ function ProductEditForm({ product, onCancel, onSave, isCreating = false, catego
           <div>
             <label className="text-sm font-medium block mb-1">Тайлбар (Монгол)</label>
             <div className={uploading ? "opacity-50 pointer-events-none" : ""}>
-              <QuillEditor 
-                theme="snow"
-                value={form.descriptionMn || form.description || ""} 
-                onChange={(value: string) => updateField('descriptionMn', value)} 
+              <TiptapEditor
+                value={form.descriptionMn || form.description || ""}
+                onChange={(value: string) => updateField("descriptionMn", value)}
                 placeholder="Барааны тайлбар монголоор"
-                modules={{
-                  toolbar: [
-                    [{ 'header': [1, 2, 3, false] }],
-                    ['bold', 'italic', 'underline', 'strike'],
-                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                    [{ 'color': [] }, { 'background': [] }],
-                    ['link', 'image'],
-                    ['clean']
-                  ]
-                }}
-                formats={[
-                  'header', 'bold', 'italic', 'underline', 'strike',
-                  'list', 'bullet', 'color', 'background',
-                  'link', 'image'
-                ]}
-                style={{ minHeight: '150px' }}
+                disabled={uploading}
+                minHeight={150}
               />
             </div>
           </div>
@@ -1248,27 +1103,12 @@ function ProductEditForm({ product, onCancel, onSave, isCreating = false, catego
           <div>
             <label className="text-sm font-medium block mb-1">Тайлбар (Англи)</label>
             <div className={uploading ? "opacity-50 pointer-events-none" : ""}>
-              <QuillEditor 
-                theme="snow"
-                value={form.description || ""} 
-                onChange={(value: string) => updateField('description', value)} 
+              <TiptapEditor
+                value={form.description || ""}
+                onChange={(value: string) => updateField("description", value)}
                 placeholder="Product description in English"
-                modules={{
-                  toolbar: [
-                    [{ 'header': [1, 2, 3, false] }],
-                    ['bold', 'italic', 'underline', 'strike'],
-                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                    [{ 'color': [] }, { 'background': [] }],
-                    ['link', 'image'],
-                    ['clean']
-                  ]
-                }}
-                formats={[
-                  'header', 'bold', 'italic', 'underline', 'strike',
-                  'list', 'bullet', 'color', 'background',
-                  'link', 'image'
-                ]}
-                style={{ minHeight: '150px' }}
+                disabled={uploading}
+                minHeight={150}
               />
             </div>
           </div>

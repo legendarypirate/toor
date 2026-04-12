@@ -8,20 +8,20 @@ const CategoryGrid: React.FC<CategoryGridProps> = ({ categories }) => {
   return (
     <section className="py-20 bg-gradient-to-br from-gray-50 to-white relative overflow-hidden">
       {/* Background Elements */}
-      <div className="absolute top-0 left-0 w-72 h-72 bg-purple-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-float"></div>
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-blue-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-float" style={{animationDelay: '2s'}}></div>
+      <div className="absolute top-0 left-0 w-72 h-72 bg-neutral-200/80 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-float"></div>
+      <div className="absolute bottom-0 right-0 w-96 h-96 bg-neutral-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-float" style={{animationDelay: '2s'}}></div>
       
-      <div className="container mx-auto px-4 relative z-10">
+      <div className="mx-auto w-full max-w-layout px-3 relative z-10">
         {/* Header */}
         <div className="text-center mb-16">
           <div className="inline-flex items-center px-6 py-3 bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200 shadow-modern mb-6">
-            <span className="w-2 h-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full mr-3"></span>
+            <span className="w-2 h-2 rounded-full bg-neutral-900 mr-3"></span>
             <span className="text-gray-700 font-medium">Бүтээгдэхүүн Ангилалууд</span>
           </div>
           
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
             Бүтээгдэхүүн 
-            <span className="block bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            <span className="block bg-gradient-to-r from-neutral-800 to-neutral-950 bg-clip-text text-transparent">
               Ангилалууд
             </span>
           </h2>

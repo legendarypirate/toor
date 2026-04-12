@@ -15,13 +15,13 @@ module.exports = (sequelize, Sequelize) => {
         companyName: {
             type: Sequelize.STRING,
             allowNull: false,
-            defaultValue: "Tsaas.mn",
+            defaultValue: "Outdoor World",
             field: 'company_name'
         },
         companySuffix: {
             type: Sequelize.STRING,
             allowNull: true,
-            defaultValue: ".mn",
+            defaultValue: "",
             field: 'company_suffix'
         },
         description: {
@@ -59,7 +59,7 @@ module.exports = (sequelize, Sequelize) => {
         copyrightText: {
             type: Sequelize.STRING,
             allowNull: true,
-            defaultValue: "© 2025 Tsaas.mn",
+            defaultValue: "© 2025 Outdoor World",
             field: 'copyright_text'
         },
         // Footer Links (Privacy Policy, Terms, etc.)

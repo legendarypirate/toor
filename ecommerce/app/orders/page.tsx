@@ -18,6 +18,7 @@ import Link from 'next/link';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
 import { useRouter } from 'next/navigation';
+import { safeImgSrc } from '@/app/lib/imageSrc';
 
 interface OrderItem {
   id: number;
@@ -59,7 +60,7 @@ const OrdersPage = () => {
   const router = useRouter();
 
   useEffect(() => {
-    document.title = 'Захиалга | TSAAS';
+    document.title = 'Захиалга | Outdoor World';
   }, []);
 
   useEffect(() => {
@@ -154,7 +155,7 @@ const OrdersPage = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <div className="container mx-auto px-4 py-12">
+        <div className="mx-auto w-full max-w-layout px-3 py-12">
           <div className="text-center">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
             <p className="mt-4 text-gray-600">Ачааллаж байна...</p>
@@ -169,7 +170,7 @@ const OrdersPage = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <div className="container mx-auto px-4 py-12">
+        <div className="mx-auto w-full max-w-layout px-3 py-12">
           <div className="max-w-4xl mx-auto">
             <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
               <XCircle className="w-12 h-12 text-red-600 mx-auto mb-4" />
@@ -193,7 +194,7 @@ const OrdersPage = () => {
     <div className="min-h-screen bg-gray-50">
       <Header />
       
-      <div className="container mx-auto px-4 py-8">
+      <div className="mx-auto w-full max-w-layout px-3 py-8">
         {/* Page Header */}
         <div className="mb-8">
           <Link
@@ -298,13 +299,13 @@ const OrdersPage = () => {
                       <div className="flex items-center gap-3 overflow-x-auto pb-2">
                         {order.items.slice(0, 5).map((item) => (
                           <div key={item.id} className="flex-shrink-0 flex items-center gap-2 bg-gray-50 rounded-lg p-2">
-                            {item.image && (
+                            {item.image?.trim() ? (
                               <img
-                                src={item.image}
+                                src={safeImgSrc(item.image)}
                                 alt={item.name_mn || item.name}
                                 className="w-12 h-12 object-cover rounded"
                               />
-                            )}
+                            ) : null}
                             <div className="min-w-0">
                               <div className="text-xs font-medium text-gray-900 truncate max-w-[120px]">
                                 {item.name_mn || item.name}

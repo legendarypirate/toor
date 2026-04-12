@@ -3,12 +3,30 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Star, Heart, ShoppingCart, Share2, Truck, Shield, RotateCcw, ChevronLeft, ZoomIn, X, ArrowLeft, Check, MessageSquare } from 'lucide-react';
+import {
+  Star,
+  Heart,
+  ShoppingCart,
+  Share2,
+  Truck,
+  Shield,
+  RotateCcw,
+  ChevronLeft,
+  ZoomIn,
+  X,
+  ArrowLeft,
+  Check,
+  MessageSquare,
+  ClipboardList,
+  LifeBuoy,
+} from 'lucide-react';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import { Product, ColorOption } from '../../lib/types';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
+import { showAppMessage } from '@/app/lib/appMessage';
+import { firstNonEmptyImg, normalizeImageList, safeImgSrc } from '@/app/lib/imageSrc';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
@@ -45,6 +63,7 @@ export default function ProductDetailPage() {
   // Loading states
   const [addingToCart, setAddingToCart] = useState(false);
   const [addingToWishlist, setAddingToWishlist] = useState(false);
+  const [detailTab, setDetailTab] = useState<'details' | 'reviews' | 'service'>('details');
 
   // Custom cursor position
   const [cursorPos, setCursorPos] = useState({ x: -100, y: -100 });
@@ -126,9 +145,9 @@ export default function ProductDetailPage() {
   useEffect(() => {
     if (product) {
       const productName = product.nameMn || product.name || 'Бүтээгдэхүүн';
-      document.title = `${productName} | TSAAS`;
+      document.title = `${productName} | Outdoor World`;
     } else {
-      document.title = 'Бүтээгдэхүүн | TSAAS';
+      document.title = 'Бүтээгдэхүүн | Outdoor World';
     }
   }, [product]);
 
@@ -212,7 +231,7 @@ const handleWishlistToggle = async () => {
       // Remove from wishlist - passing UUID string
       removeFromWishlist(productId);
       setIsLiked(false);
-      showToast('Бүтээгдэхүүн хүсэлтийн жагсаалтаас хасагдлаа', 'success');
+      showAppMessage('Бүтээгдэхүүн хүсэлтийн жагсаалтаас хасагдлаа', 'success');
     } else {
       // Add to wishlist
       addToWishlist({
@@ -231,11 +250,11 @@ const handleWishlistToggle = async () => {
         addedAt: new Date().toISOString()
       });
       setIsLiked(true);
-      showToast('Бүтээгдэхүүн хүсэлтийн жагсаалтанд нэмэгдлээ', 'success');
+      showAppMessage('Бүтээгдэхүүн хүсэлтийн жагсаалтанд нэмэгдлээ', 'success');
     }
   } catch (error) {
     console.error('Error updating wishlist:', error);
-    showToast('Алдаа гарлаа. Дахин оролдоно уу.', 'error');
+    showAppMessage('Алдаа гарлаа. Дахин оролдоно уу.', 'error');
   } finally {
     setAddingToWishlist(false);
   }
@@ -248,7 +267,7 @@ const handleAddToCart = async () => {
   
   const currentInStock = getCurrentStockStatus();
   if (!currentInStock) {
-    showToast('Энэ бүтээгдэхүүн дууссан байна', 'warning');
+    showAppMessage('Энэ бүтээгдэхүүн дууссан байна', 'warning');
     return;
   }
   
@@ -258,7 +277,7 @@ const handleAddToCart = async () => {
     // Validate selection if product has variations
     if (product.variations && product.variations.length > 0) {
       if (!selectedVariation) {
-        showToast('Хэмжээ эсвэл өнгийг сонгоно уу', 'warning');
+        showAppMessage('Хэмжээ эсвэл өнгийг сонгоно уу', 'warning');
         setAddingToCart(false);
         return;
       }
@@ -295,15 +314,15 @@ const handleAddToCart = async () => {
     const result = addToCart(cartItem);
     
     if (result.alreadyExists) {
-      showToast('энэ бараа сагсанд байна', 'warning');
+      showAppMessage('энэ бараа сагсанд байна', 'warning');
     } else if (result.success) {
-      showToast(`${quantity} ширхэг ${product.name} сагсанд нэмэгдлээ`, 'success');
+      showAppMessage(`${quantity} ширхэг ${product.name} сагсанд нэмэгдлээ`, 'success');
       setQuantity(1);
     }
     
   } catch (error) {
     console.error('Error adding to cart:', error);
-    showToast('Алдаа гарлаа. Дахин оролдоно уу.', 'error');
+    showAppMessage('Алдаа гарлаа. Дахин оролдоно уу.', 'error');
   } finally {
     setAddingToCart(false);
   }
@@ -392,12 +411,12 @@ const handleAddToCart = async () => {
   // Handle review submission
   const handleSubmitReview = async () => {
     if (!isAuthenticated || !user) {
-      showToast('Үнэлгээ үлдээхийн тулд нэвтэрнэ үү', 'warning');
+      showAppMessage('Үнэлгээ үлдээхийн тулд нэвтэрнэ үү', 'warning');
       return;
     }
 
     if (!reviewForm.rating || !reviewForm.comment.trim()) {
-      showToast('Үнэлгээ болон сэтгэгдэл оруулна уу', 'warning');
+      showAppMessage('Үнэлгээ болон сэтгэгдэл оруулна уу', 'warning');
       return;
     }
 
@@ -425,55 +444,20 @@ const handleAddToCart = async () => {
         setReviews([newReview, ...reviews]);
         setReviewForm({ rating: 0, comment: '', hoverRating: 0 });
         setShowReviewForm(false);
-        showToast('Үнэлгээ амжилттай үлдээгдлээ', 'success');
+        showAppMessage('Үнэлгээ амжилттай үлдээгдлээ', 'success');
         
         // Refresh product data to update rating
         fetchProductData();
       } else {
         const error = await response.json();
-        showToast(error.message || 'Үнэлгээ үлдээхэд алдаа гарлаа', 'error');
+        showAppMessage(error.message || 'Үнэлгээ үлдээхэд алдаа гарлаа', 'error');
       }
     } catch (error) {
       console.error('Error submitting review:', error);
-      showToast('Үнэлгээ үлдээхэд алдаа гарлаа', 'error');
+      showAppMessage('Үнэлгээ үлдээхэд алдаа гарлаа', 'error');
     } finally {
       setSubmittingReview(false);
     }
-  };
-
-  // Toast notification function
-  const showToast = (message: string, type: 'success' | 'error' | 'warning' = 'success') => {
-    // Create toast element
-    const toast = document.createElement('div');
-    toast.className = `fixed top-[100px] right-4 z-50 px-4 py-3 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full ${
-      type === 'success' ? 'bg-green-50 border border-green-200 text-green-800' :
-      type === 'error' ? 'bg-red-50 border border-red-200 text-red-800' :
-      'bg-yellow-50 border border-yellow-200 text-yellow-800'
-    }`;
-    
-    toast.innerHTML = `
-      <div class="flex items-center">
-        <div class="mr-3">
-          ${type === 'success' ? '✅' : type === 'error' ? '❌' : '⚠️'}
-        </div>
-        <div class="font-medium">${message}</div>
-      </div>
-    `;
-    
-    document.body.appendChild(toast);
-    
-    // Animate in
-    setTimeout(() => {
-      toast.classList.remove('translate-x-full');
-    }, 10);
-    
-    // Remove after 3 seconds
-    setTimeout(() => {
-      toast.classList.add('translate-x-full');
-      setTimeout(() => {
-        document.body.removeChild(toast);
-      }, 300);
-    }, 3000);
   };
 
   // Handle mouse move for custom cursor
@@ -539,14 +523,18 @@ const handleAddToCart = async () => {
     }
   }, [isZooming]);
 
+  const DEFAULT_DETAIL_IMG =
+    'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=1200&h=1200&fit=crop';
+
   // Get images to display (use variation images if available, otherwise product images)
   const getDisplayImages = () => {
     if (selectedVariation?.images && selectedVariation.images.length > 0) {
-      return selectedVariation.images;
+      return normalizeImageList(selectedVariation.images, DEFAULT_DETAIL_IMG);
     }
-    return product?.images && product.images.length > 0 
-      ? product.images 
-      : ['https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=1200&h=1200&fit=crop'];
+    if (product?.images && product.images.length > 0) {
+      return normalizeImageList(product.images, DEFAULT_DETAIL_IMG);
+    }
+    return [DEFAULT_DETAIL_IMG];
   };
 
   const images = getDisplayImages();
@@ -590,13 +578,32 @@ const handleAddToCart = async () => {
     return numPrice.toLocaleString();
   };
 
+  const handleShareProduct = async () => {
+    if (!product || typeof window === 'undefined') return;
+    const url = window.location.href;
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: product.nameMn || product.name,
+          text: product.nameMn || product.name,
+          url,
+        });
+      } else if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+        showAppMessage('Холбоос хуулагдлаа', 'success');
+      }
+    } catch {
+      /* dismissed or unsupported */
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
 
       {/* Breadcrumb */}
       <div className="bg-gradient-to-r from-white via-gray-50 to-white border-b border-gray-200">
-        <div className="container mx-auto px-4 py-3">
+        <div className="mx-auto w-full max-w-layout px-3 py-3">
           <div className="flex items-center text-sm">
             <button 
               onClick={() => router.push('/')}
@@ -623,11 +630,11 @@ const handleAddToCart = async () => {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8 shadow-sm">
-          <div className="grid lg:grid-cols-2 gap-8">
+      <div className="mx-auto w-full max-w-layout px-3 py-8">
+        <div className="mb-8 flex w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-gray-200/90 bg-white shadow-[0_8px_40px_-12px_rgba(15,23,42,0.12)] ring-1 ring-black/[0.04]">
+          <div className="grid w-full min-w-0 grid-cols-1 gap-8 p-6 md:p-8 lg:grid-cols-2 lg:gap-12">
             {/* Product Images with Simple Hover Zoom */}
-            <div>
+            <div className="min-w-0 lg:max-w-none">
               <div className="mb-4">
                 {/* Main Image Container with Hover Zoom */}
                 <div className="relative">
@@ -638,7 +645,7 @@ const handleAddToCart = async () => {
                     onMouseLeave={handleMouseLeave}
                   >
                     <img 
-                      src={images[selectedImage]} 
+                      src={safeImgSrc(images[selectedImage], images[0])} 
                       alt={product.name}
                       className="w-full h-full object-cover transition-transform duration-100"
                       style={getZoomStyle()}
@@ -686,7 +693,7 @@ const handleAddToCart = async () => {
                         }`}
                       >
                         <img 
-                          src={img} 
+                          src={safeImgSrc(img)} 
                           alt={`${product.name} ${idx + 1}`}
                           className="w-full h-full object-cover"
                         />
@@ -698,7 +705,7 @@ const handleAddToCart = async () => {
             </div>
 
             {/* Product Info */}
-            <div>
+            <div className="min-w-0">
               <div className="mb-4">
                 <div className="flex items-center justify-between mb-3">
                   {product.brand ? (
@@ -763,32 +770,6 @@ const handleAddToCart = async () => {
                   )}
                 </div>
               </div>
-
-              {/* Description */}
-              {product.description && (
-                <div className="mb-6">
-                  <h3 className="text-sm font-bold text-gray-900 mb-2">Тайлбар</h3>
-                  <div 
-                    className="text-gray-600 text-sm leading-relaxed prose prose-sm max-w-none"
-                    dangerouslySetInnerHTML={{ __html: product.description }}
-                  />
-                </div>
-              )}
-
-              {/* Specifications */}
-              {product.specifications && Object.keys(product.specifications).length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-sm font-bold text-gray-900 mb-3">Техникийн мэдээлэл</h3>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    {Object.entries(product.specifications).map(([key, value]) => (
-                      <div key={key} className="flex">
-                        <span className="text-gray-500 w-32">{key}:</span>
-                        <span className="text-gray-900 font-medium">{value}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               {/* Color Selection - Colored Radio Buttons */}
               {product.colorOptions && product.colorOptions.length > 0 && (
@@ -923,7 +904,7 @@ const handleAddToCart = async () => {
                             px-3 py-2 border rounded-lg text-xs font-medium transition-all duration-200
                             flex items-center gap-2
                             ${isSelected 
-                              ? 'bg-blue-50 text-blue-700 border-blue-300 ring-1 ring-blue-200' 
+                              ? 'bg-gray-900 text-white border-gray-900 ring-2 ring-gray-900/15' 
                               : variation.inStock
                                 ? 'bg-white text-gray-700 border-gray-300 hover:border-gray-400 hover:bg-gray-50'
                                 : 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed'
@@ -968,7 +949,7 @@ const handleAddToCart = async () => {
                         w-full py-3 rounded-lg font-medium text-sm flex items-center justify-center space-x-2 
                         transition-all duration-200 transform hover:scale-[1.02] disabled:hover:scale-100
                         ${currentInStock 
-                          ? 'bg-blue-600 hover:bg-blue-700 text-white disabled:bg-blue-400' 
+                          ? 'bg-gray-900 hover:bg-black text-white disabled:bg-gray-400' 
                           : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                         }
                       `}
@@ -1004,26 +985,382 @@ const handleAddToCart = async () => {
                 </div>
               </div>
 
-              {/* Features */}
-              <div className="border-t border-gray-200 pt-4">
-                <div className="grid grid-cols-2 gap-4 text-xs">
-                  <div className="flex items-center text-gray-600">
-                    <Truck className="w-4 h-4 mr-2" />
-                    <span>Үнэгүй хүргэлт (120к дээш)</span>
+              {/* Trust strip + tabs — directly under stock / Бэлэн байгаа */}
+              <div className="mt-5 w-full border-t border-gray-100 bg-gradient-to-br from-gray-50/90 via-white to-gray-50/50 pt-4">
+                <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
+                  {[
+                    { icon: Truck, label: 'Үнэгүй хүргэлт', sub: '120 000₮ дээш' },
+                    { icon: RotateCcw, label: '72 цаг', sub: 'Дотор буцаалт' },
+                    { icon: Shield, label: '1 жилийн баталгаа', sub: 'Албан ёсны' },
+                    { icon: Share2, label: 'Хуваалцах', sub: 'Энэ барааны холбоос', action: true },
+                  ].map((item, i) => {
+                    const Icon = item.icon;
+                    const inner = (
+                      <>
+                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-gray-900 text-white shadow-sm sm:h-7 sm:w-7">
+                          <Icon className="h-3 w-3 sm:h-3.5 sm:w-3.5" strokeWidth={2} />
+                        </div>
+                        <div className="min-w-0 w-full text-center">
+                          <p className="text-[10px] font-semibold leading-snug text-gray-900 sm:text-xs">
+                            {item.label}
+                          </p>
+                          <p className="mt-0.5 text-[9px] leading-snug text-gray-500 sm:text-[10px]">{item.sub}</p>
+                        </div>
+                      </>
+                    );
+                    const cellClass =
+                      'flex min-h-0 min-w-0 flex-col items-center justify-center gap-1 rounded-lg border border-gray-200/80 bg-white/90 px-1 py-1.5 text-center shadow-sm sm:px-1.5 sm:py-2';
+                    return item.action ? (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={handleShareProduct}
+                        className={`${cellClass} w-full transition hover:border-gray-300 hover:bg-white`}
+                      >
+                        {inner}
+                      </button>
+                    ) : (
+                      <div key={i} className={cellClass}>
+                        {inner}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Tabs: details | reviews | service */}
+              <div className="mt-4 w-full border-t border-gray-100 bg-white pb-2 pt-4">
+                <div
+                  className="mb-6 flex flex-wrap gap-1 rounded-2xl border border-gray-200/80 bg-gray-50/80 p-1.5 shadow-inner"
+                  role="tablist"
+                >
+                  {(
+                    [
+                      { id: 'details' as const, label: 'Бүтээгдэхүүний дэлгэрэнгүй', Icon: ClipboardList },
+                      { id: 'reviews' as const, label: 'Үнэлгээ', Icon: MessageSquare },
+                      { id: 'service' as const, label: 'Хүргэлт ба тусламж', Icon: LifeBuoy },
+                    ] as const
+                  ).map(({ id, label, Icon }) => (
+                    <button
+                      key={id}
+                      type="button"
+                      role="tab"
+                      aria-selected={detailTab === id}
+                      onClick={() => setDetailTab(id)}
+                      className={`flex min-w-0 flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-semibold transition sm:text-sm ${
+                        detailTab === id
+                          ? 'bg-white text-gray-900 shadow-sm ring-1 ring-black/5'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      <Icon className="h-4 w-4 shrink-0 opacity-80" />
+                      <span className="truncate">{label}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {detailTab === 'details' && (
+              <div className="animate-in fade-in duration-200 space-y-8">
+                {product.description ? (
+                  <section>
+                    <h3 className="mb-3 text-base font-bold text-gray-900">Тайлбар</h3>
+                    <div
+                      className="prose prose-sm max-w-none leading-relaxed text-gray-700 prose-headings:text-gray-900 prose-a:text-gray-900"
+                      dangerouslySetInnerHTML={{ __html: product.description }}
+                    />
+                  </section>
+                ) : (
+                  <p className="text-sm text-gray-500">Энэ бүтээгдэхүүнд тайлбар оруулаагүй байна.</p>
+                )}
+
+                {product.specifications && Object.keys(product.specifications).length > 0 && (
+                  <section>
+                    <h3 className="mb-4 text-base font-bold text-gray-900">Техникийн үзүүлэлт</h3>
+                    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-gray-50/50">
+                      <dl className="divide-y divide-gray-200/80">
+                        {Object.entries(product.specifications).map(([key, value]) => (
+                          <div
+                            key={key}
+                            className="grid gap-1 px-4 py-3 sm:grid-cols-[minmax(8rem,30%)_1fr] sm:gap-4"
+                          >
+                            <dt className="text-sm font-medium text-gray-500">{key}</dt>
+                            <dd className="text-sm font-semibold text-gray-900">{String(value)}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </div>
+                  </section>
+                )}
+
+                {infoImages.length > 0 && (
+                  <section>
+                    <h3 className="mb-4 text-base font-bold text-gray-900">Мэдээллийн зураг</h3>
+                    <div className="space-y-4">
+                      {infoImages.map((imageUrl, index) => (
+                        <div key={index} className="overflow-hidden rounded-2xl border border-gray-100 bg-gray-50/30">
+                          <img
+                            src={safeImgSrc(imageUrl)}
+                            alt={`Мэдээллийн зураг ${index + 1}`}
+                            className="h-auto w-full object-contain"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = '/default.jpg';
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
+              </div>
+            )}
+
+            {detailTab === 'reviews' && (
+              <div className="animate-in fade-in duration-200">
+                <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900">
+                      Үнэлгээ{' '}
+                      <span className="text-gray-500">
+                        ({reviews.length || product.reviewCount || 0})
+                      </span>
+                    </h3>
+                    <p className="text-sm text-gray-500">Бодит худалдан авалтын сэтгэгдэл</p>
                   </div>
-                  <div className="flex items-center text-gray-600">
-                    <RotateCcw className="w-4 h-4 mr-2" />
-                    <span>72 цаг дотор буцаалт</span>
+                  {isAuthenticated && !showReviewForm && (
+                    <button
+                      type="button"
+                      onClick={() => setShowReviewForm(true)}
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-black"
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                      Үнэлгээ үлдээх
+                    </button>
+                  )}
+                </div>
+
+                {isAuthenticated && showReviewForm && (
+                  <div className="mb-6 rounded-2xl border border-gray-200 bg-gray-50/80 p-4 md:p-6">
+                    <div className="mb-4 flex items-center justify-between">
+                      <h4 className="text-md font-bold text-gray-900">Үнэлгээ үлдээх</h4>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowReviewForm(false);
+                          setReviewForm({ rating: 0, comment: '', hoverRating: 0 });
+                        }}
+                        className="text-gray-500 hover:text-gray-700"
+                      >
+                        <X className="h-5 w-5" />
+                      </button>
+                    </div>
+
+                    <div className="mb-4">
+                      <label className="mb-2 block text-sm font-medium text-gray-700">
+                        Үнэлгээ <span className="text-red-500">*</span>
+                      </label>
+                      <div className="flex items-center gap-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            type="button"
+                            onClick={() => setReviewForm({ ...reviewForm, rating: star })}
+                            onMouseEnter={() => setReviewForm({ ...reviewForm, hoverRating: star })}
+                            onMouseLeave={() => setReviewForm({ ...reviewForm, hoverRating: 0 })}
+                            className="focus:outline-none"
+                          >
+                            <Star
+                              className={`h-6 w-6 transition-colors ${
+                                star <= (reviewForm.hoverRating || reviewForm.rating)
+                                  ? 'fill-yellow-400 text-yellow-400'
+                                  : 'text-gray-300'
+                              }`}
+                            />
+                          </button>
+                        ))}
+                        {reviewForm.rating > 0 && (
+                          <span className="ml-2 text-sm text-gray-600">
+                            {reviewForm.rating === 1 && 'Маш муу'}
+                            {reviewForm.rating === 2 && 'Муу'}
+                            {reviewForm.rating === 3 && 'Дунд'}
+                            {reviewForm.rating === 4 && 'Сайн'}
+                            {reviewForm.rating === 5 && 'Маш сайн'}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="mb-4">
+                      <label className="mb-2 block text-sm font-medium text-gray-700">
+                        Сэтгэгдэл <span className="text-red-500">*</span>
+                      </label>
+                      <textarea
+                        value={reviewForm.comment}
+                        onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
+                        placeholder="Бүтээгдэхүүний талаарх сэтгэгдлээ үлдээнэ үү..."
+                        rows={4}
+                        className="w-full resize-none rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-900/20"
+                      />
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={handleSubmitReview}
+                        disabled={submittingReview || !reviewForm.rating || !reviewForm.comment.trim()}
+                        className={`flex-1 rounded-xl px-4 py-2.5 font-medium transition-colors ${
+                          submittingReview || !reviewForm.rating || !reviewForm.comment.trim()
+                            ? 'cursor-not-allowed bg-gray-200 text-gray-500'
+                            : 'bg-gray-900 text-white hover:bg-black'
+                        }`}
+                      >
+                        {submittingReview ? 'Илгээж байна...' : 'Үнэлгээ үлдээх'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowReviewForm(false);
+                          setReviewForm({ rating: 0, comment: '', hoverRating: 0 });
+                        }}
+                        className="rounded-xl border border-gray-300 px-4 py-2.5 text-gray-700 hover:bg-gray-50"
+                      >
+                        Цуцлах
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex items-center text-gray-600">
-                    <Shield className="w-4 h-4 mr-2" />
-                    <span>1 жилийн баталгаа</span>
+                )}
+
+                {!isAuthenticated && (
+                  <div className="mb-6 rounded-2xl border border-blue-100 bg-blue-50/50 p-4">
+                    <p className="mb-2 text-sm text-blue-900">Үнэлгээ үлдээхийн тулд нэвтэрнэ үү</p>
+                    <button
+                      type="button"
+                      onClick={() => router.push('/login')}
+                      className="text-sm font-medium text-blue-700 underline hover:text-blue-900"
+                    >
+                      Нэвтрэх
+                    </button>
                   </div>
-                  <div className="flex items-center text-gray-600">
-                    <Share2 className="w-4 h-4 mr-2" />
-                    <span>Хуваалцах</span>
+                )}
+
+                {loadingReviews ? (
+                  <div className="py-12 text-center">
+                    <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
+                    <p className="mt-2 text-sm text-gray-600">Үнэлгээ ачаалж байна...</p>
+                  </div>
+                ) : reviews.length > 0 ? (
+                  <div className="space-y-4">
+                    {reviews.map((review: any) => (
+                      <div
+                        key={review.id}
+                        className="rounded-2xl border border-gray-100 bg-gray-50/40 p-4 last:pb-4"
+                      >
+                        <div className="mb-2 flex items-center justify-between">
+                          <div className="flex items-center">
+                            <div className="mr-2 h-8 w-8 rounded-full bg-gray-200" />
+                            <span className="text-sm font-medium">{review.userName || 'Хэрэглэгч'}</span>
+                            {review.verifiedPurchase && (
+                              <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-800">
+                                Баталгаажсан худалдан авалт
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-xs text-gray-500">
+                            {typeof review.createdAt === 'string'
+                              ? new Date(review.createdAt).toLocaleDateString('mn-MN', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric',
+                                })
+                              : review.createdAt instanceof Date
+                                ? review.createdAt.toLocaleDateString('mn-MN', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric',
+                                  })
+                                : 'Саяхан'}
+                          </span>
+                        </div>
+                        {review.title && (
+                          <h4 className="mb-1 text-sm font-bold text-gray-900">{review.title}</h4>
+                        )}
+                        <div className="mb-2 flex items-center">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`h-3 w-3 ${
+                                i < (review.rating || 0)
+                                  ? 'fill-yellow-400 text-yellow-400'
+                                  : 'text-gray-300'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <p className="text-sm text-gray-600">{review.comment || 'Тайлбар оруулаагүй.'}</p>
+                        {review.images && review.images.length > 0 && (
+                          <div className="mt-3 flex gap-2">
+                            {review.images.slice(0, 3).map((img: string, index: number) => (
+                              <img
+                                key={index}
+                                src={safeImgSrc(img)}
+                                alt={`Үнэлгээний зураг ${index + 1}`}
+                                className="h-16 w-16 rounded border object-cover"
+                              />
+                            ))}
+                          </div>
+                        )}
+                        {review.helpfulCount > 0 && (
+                          <div className="mt-2 text-xs text-gray-500">{review.helpfulCount} хүнд тусалсан</div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-gray-200 py-12 text-center">
+                    <MessageSquare className="mx-auto mb-2 h-12 w-12 text-gray-300" />
+                    <p className="text-sm text-gray-600">Үнэлгээ байхгүй байна. Анхны үнэлгээгээ үлдээгээрэй!</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {detailTab === 'service' && (
+              <div className="animate-in fade-in duration-200 space-y-6">
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="rounded-2xl border border-gray-200 bg-gradient-to-br from-white to-gray-50 p-5 shadow-sm">
+                    <Truck className="mb-3 h-8 w-8 text-gray-900" />
+                    <h4 className="mb-2 font-bold text-gray-900">Хүргэлт</h4>
+                    <p className="text-sm leading-relaxed text-gray-600">
+                      Улаанбаатар хотын хэмжээнд 120 000₮-аас дээш захиалгад хүргэлт үнэгүй. Бусад сум, аймаг руу
+                      тээврийн компаниар хүргэлт хийгдэнэ — нөхцөлийг төлбөр төлөх үед баталгаажуулна.
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-gray-200 bg-gradient-to-br from-white to-gray-50 p-5 shadow-sm">
+                    <RotateCcw className="mb-3 h-8 w-8 text-gray-900" />
+                    <h4 className="mb-2 font-bold text-gray-900">Буцаалт</h4>
+                    <p className="text-sm leading-relaxed text-gray-600">
+                      Бараа хүлээн авснаас хойш 72 цагийн дотор буцаалт хүсэлт өгөх боломжтой. Бараа анхны
+                      савлагаатай, ашиглаагүй байх шаардлагатай.
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-gray-200 bg-gradient-to-br from-white to-gray-50 p-5 shadow-sm">
+                    <Shield className="mb-3 h-8 w-8 text-gray-900" />
+                    <h4 className="mb-2 font-bold text-gray-900">Баталгаа</h4>
+                    <p className="text-sm leading-relaxed text-gray-600">
+                      Үйлдвэрийн алдаатай тохиолдолд 1 жилийн хугацаанд засвар үйлчилгээ эсвэл солилцоо хийнэ.
+                      Дэлгэрэнгүйг үйлчилгээний төвөөс лавлана уу.
+                    </p>
                   </div>
                 </div>
+                <div className="rounded-2xl border border-gray-200 bg-white p-5 md:p-6">
+                  <h4 className="mb-2 font-bold text-gray-900">Түгээмэл асуулт</h4>
+                  <ul className="list-inside list-disc space-y-2 text-sm text-gray-600">
+                    <li>Захиалгын төлөвийг «Миний захиалга» хэсгээс шалгана уу.</li>
+                    <li>Бараа солих, буцаах үед холбоо барих дугаар руу зураг илгээнэ үү.</li>
+                    <li>Төлбөр картаар бол банкны баталгаа автоматаар илгээгдэнэ.</li>
+                  </ul>
+                </div>
+              </div>
+            )}
               </div>
             </div>
           </div>
@@ -1031,9 +1368,9 @@ const handleAddToCart = async () => {
 
         {/* Related Products Section */}
         {relatedProducts.length > 0 && (
-          <div className="mb-8">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Төстэй бараа</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="mb-10">
+            <h2 className="mb-5 text-xl font-bold tracking-tight text-gray-900">Төстэй бараа</h2>
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
               {relatedProducts.map((item: Product) => {
                 if (!item.id || item.id === 'NaN' || item.id === 'undefined' || item.id === 'null') {
                   return null;
@@ -1041,12 +1378,12 @@ const handleAddToCart = async () => {
                 return (
                 <div 
                   key={item.id} 
-                  className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:border-gray-300 transition-colors cursor-pointer hover:shadow-md"
+                  className="cursor-pointer overflow-hidden rounded-2xl border border-gray-200/90 bg-white shadow-sm transition hover:border-gray-300 hover:shadow-md"
                   onClick={() => router.push(`/product/${item.id}`)}
                 >
                   <div className="aspect-square bg-gray-100">
                     <img 
-                      src={item.thumbnail || (item.images && item.images[0]) || '/placeholder.jpg'} 
+                      src={firstNonEmptyImg(item.thumbnail, item.images?.[0])} 
                       alt={item.name}
                       className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                     />
@@ -1063,231 +1400,6 @@ const handleAddToCart = async () => {
             </div>
           </div>
         )}
-
-        {/* Info Images Section */}
-        {infoImages.length > 0 && (
-          <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Мэдээллийн зураг</h2>
-            <div className="space-y-4">
-              {infoImages.map((imageUrl, index) => (
-                <div key={index} className="w-full">
-                  <img
-                    src={imageUrl}
-                    alt={`Product info ${index + 1}`}
-                    className="w-full h-auto rounded-lg object-contain"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = "/placeholder.jpg";
-                    }}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Reviews Section */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-gray-900">
-              Үнэлгээ ({reviews.length || product.reviewCount || 0})
-            </h2>
-            {isAuthenticated && !showReviewForm && (
-              <button
-                onClick={() => setShowReviewForm(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-              >
-                <MessageSquare className="w-4 h-4" />
-                Үнэлгээ үлдээх
-              </button>
-            )}
-          </div>
-
-          {/* Review Form */}
-          {isAuthenticated && showReviewForm && (
-            <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-md font-bold text-gray-900">Үнэлгээ үлдээх</h3>
-                <button
-                  onClick={() => {
-                    setShowReviewForm(false);
-                    setReviewForm({ rating: 0, comment: '', hoverRating: 0 });
-                  }}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Rating Selection */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Үнэлгээ <span className="text-red-500">*</span>
-                </label>
-                <div className="flex items-center gap-1">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => setReviewForm({ ...reviewForm, rating: star })}
-                      onMouseEnter={() => setReviewForm({ ...reviewForm, hoverRating: star })}
-                      onMouseLeave={() => setReviewForm({ ...reviewForm, hoverRating: 0 })}
-                      className="focus:outline-none"
-                    >
-                      <Star
-                        className={`w-6 h-6 transition-colors ${
-                          star <= (reviewForm.hoverRating || reviewForm.rating)
-                            ? 'text-yellow-400 fill-yellow-400'
-                            : 'text-gray-300'
-                        }`}
-                      />
-                    </button>
-                  ))}
-                  {reviewForm.rating > 0 && (
-                    <span className="ml-2 text-sm text-gray-600">
-                      {reviewForm.rating === 1 && 'Маш муу'}
-                      {reviewForm.rating === 2 && 'Муу'}
-                      {reviewForm.rating === 3 && 'Дунд'}
-                      {reviewForm.rating === 4 && 'Сайн'}
-                      {reviewForm.rating === 5 && 'Маш сайн'}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Comment */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Сэтгэгдэл <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  value={reviewForm.comment}
-                  onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
-                  placeholder="Бүтээгдэхүүний талаарх сэтгэгдлээ үлдээнэ үү..."
-                  rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                />
-              </div>
-
-              {/* Submit Button */}
-              <div className="flex gap-2">
-                <button
-                  onClick={handleSubmitReview}
-                  disabled={submittingReview || !reviewForm.rating || !reviewForm.comment.trim()}
-                  className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
-                    submittingReview || !reviewForm.rating || !reviewForm.comment.trim()
-                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
-                  }`}
-                >
-                  {submittingReview ? 'Илгээж байна...' : 'Үнэлгээ үлдээх'}
-                </button>
-                <button
-                  onClick={() => {
-                    setShowReviewForm(false);
-                    setReviewForm({ rating: 0, comment: '', hoverRating: 0 });
-                  }}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  Цуцлах
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Not Authenticated Message */}
-          {!isAuthenticated && (
-            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-800 mb-2">
-                Үнэлгээ үлдээхийн тулд нэвтэрнэ үү
-              </p>
-              <button
-                onClick={() => router.push('/auth/login')}
-                className="text-sm text-blue-600 hover:text-blue-800 font-medium underline"
-              >
-                Нэвтрэх
-              </button>
-            </div>
-          )}
-
-          {/* Reviews List */}
-          {loadingReviews ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-2 text-sm text-gray-600">Үнэлгээ ачаалж байна...</p>
-            </div>
-          ) : reviews.length > 0 ? (
-            <div className="space-y-4">
-              {reviews.map((review: any) => (
-                <div key={review.id} className="border-b border-gray-100 pb-4 last:border-0">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center">
-                      <div className="w-8 h-8 bg-gray-200 rounded-full mr-2"></div>
-                      <span className="text-sm font-medium">{review.userName || 'Хэрэглэгч'}</span>
-                      {review.verifiedPurchase && (
-                        <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded">
-                          Баталгаажсан худалдан авалт
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-xs text-gray-500">
-                      {typeof review.createdAt === 'string' 
-                        ? new Date(review.createdAt).toLocaleDateString('mn-MN', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric'
-                          })
-                        : review.createdAt instanceof Date
-                        ? review.createdAt.toLocaleDateString('mn-MN', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric'
-                          })
-                        : 'Саяхан'}
-                    </span>
-                  </div>
-                  {review.title && (
-                    <h4 className="text-sm font-bold text-gray-900 mb-1">{review.title}</h4>
-                  )}
-                  <div className="flex items-center mb-2">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className={`w-3 h-3 ${i < (review.rating || 0) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`}
-                      />
-                    ))}
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    {review.comment || 'Тайлбар оруулаагүй.'}
-                  </p>
-                  {/* Review Images */}
-                  {review.images && review.images.length > 0 && (
-                    <div className="mt-3 flex gap-2">
-                      {review.images.slice(0, 3).map((img: string, index: number) => (
-                        <img
-                          key={index}
-                          src={img}
-                          alt={`Үнэлгээний зураг ${index + 1}`}
-                          className="w-16 h-16 rounded object-cover border"
-                        />
-                      ))}
-                    </div>
-                  )}
-                  {/* Helpful Count */}
-                  {review.helpfulCount > 0 && (
-                    <div className="mt-2 text-xs text-gray-500">
-                      {review.helpfulCount} хүнд тусалсан
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-              <p className="text-gray-600 text-sm">Үнэлгээ байхгүй байна. Анхны үнэлгээгээ үлдээгээрэй!</p>
-            </div>
-          )}
-        </div>
       </div>
 
       <Footer />
@@ -1307,7 +1419,7 @@ const handleAddToCart = async () => {
               {/* Zoomed Image in Modal */}
               <div className="flex-1 relative rounded-lg overflow-hidden">
                 <img 
-                  src={images[selectedImage]} 
+                  src={safeImgSrc(images[selectedImage], images[0])} 
                   alt={product.name}
                   className="w-full h-full object-contain"
                 />
@@ -1326,7 +1438,7 @@ const handleAddToCart = async () => {
                     }`}
                   >
                     <img 
-                      src={img} 
+                      src={safeImgSrc(img)} 
                       alt={`${product.name} ${idx + 1}`}
                       className="w-full h-full object-cover"
                     />

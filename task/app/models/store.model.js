@@ -1,7 +1,7 @@
-// Catalog brands (admin CRUD; product.brand string can match name)
+// Physical retail locations (Дэлгүүрүүд)
 module.exports = (sequelize, Sequelize) => {
-  const Brand = sequelize.define(
-    "brand",
+  const RetailStore = sequelize.define(
+    "retail_store",
     {
       id: {
         type: Sequelize.UUID,
@@ -12,18 +12,23 @@ module.exports = (sequelize, Sequelize) => {
         type: Sequelize.STRING,
         allowNull: false,
       },
-      slug: {
-        type: Sequelize.STRING,
-        allowNull: true,
-      },
-      logoUrl: {
-        type: Sequelize.STRING,
-        allowNull: true,
-        field: "logo_url",
-      },
-      description: {
+      address: {
         type: Sequelize.TEXT,
         allowNull: true,
+      },
+      phone: {
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
+      hours: {
+        type: Sequelize.STRING,
+        allowNull: true,
+        comment: "Opening hours text",
+      },
+      imageUrl: {
+        type: Sequelize.STRING,
+        allowNull: true,
+        field: "image_url",
       },
       sortOrder: {
         type: Sequelize.INTEGER,
@@ -40,10 +45,10 @@ module.exports = (sequelize, Sequelize) => {
       timestamps: true,
       createdAt: "created_at",
       updatedAt: "updated_at",
-      tableName: "brands",
+      tableName: "retail_stores",
       underscored: true,
     }
   );
 
-  return Brand;
+  return RetailStore;
 };

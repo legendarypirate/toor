@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { X, Mail, Lock, Eye, EyeOff, User, Facebook, Chrome } from 'lucide-react';
+import { showAppMessage } from '@/app/lib/appMessage';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -11,7 +12,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
-    document.title = 'Нэвтрэх | TSAAS';
+    document.title = 'Нэвтрэх | Outdoor World';
   }, []);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -45,7 +46,7 @@ export default function LoginPage() {
       }
       
       await login(credentials);
-      showToast('амжилттай нэвтэрлээ', 'success');
+      showAppMessage('амжилттай нэвтэрлээ', 'success');
       setTimeout(() => {
         router.push('/');
       }, 500);
@@ -64,42 +65,6 @@ export default function LoginPage() {
   const handleFacebookLogin = () => {
     // Facebook OAuth implementation
     window.location.href = '/api/auth/facebook';
-  };
-
-  // Toast notification function
-  const showToast = (message: string, type: 'success' | 'error' | 'warning' = 'success') => {
-    const toast = document.createElement('div');
-    toast.className = `fixed top-[100px] right-4 z-50 px-4 py-3 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full ${
-      type === 'success' ? 'bg-green-50 border border-green-200 text-green-800' :
-      type === 'error' ? 'bg-red-50 border border-red-200 text-red-800' :
-      'bg-yellow-50 border border-yellow-200 text-yellow-800'
-    }`;
-    
-    toast.innerHTML = `
-      <div class="flex items-center">
-        <div class="mr-3">
-          ${type === 'success' ? '✅' : type === 'error' ? '❌' : '⚠️'}
-        </div>
-        <div class="font-medium">${message}</div>
-      </div>
-    `;
-    
-    document.body.appendChild(toast);
-    
-    // Animate in
-    setTimeout(() => {
-      toast.classList.remove('translate-x-full');
-    }, 10);
-    
-    // Remove after 3 seconds
-    setTimeout(() => {
-      toast.classList.add('translate-x-full');
-      setTimeout(() => {
-        if (document.body.contains(toast)) {
-          document.body.removeChild(toast);
-        }
-      }, 300);
-    }, 3000);
   };
 
   return (

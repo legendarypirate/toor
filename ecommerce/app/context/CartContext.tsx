@@ -2,6 +2,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
+import { getPublicApiBase } from '../lib/apiBase';
 
 interface Product {
   id: string | number;
@@ -145,11 +146,10 @@ export const CartProvider = ({ children }: CartProviderProps) => {
     const checkAndAddGifts = async () => {
       isCheckingGiftsRef.current = true;
       try {
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
         const itemCount = nonGiftItems.reduce((sum, item) => sum + item.quantity, 0);
 
         // Check eligibility
-        const response = await fetch(`${API_URL}/gift-settings/check-eligibility`, {
+        const response = await fetch(`${getPublicApiBase()}/gift-settings/check-eligibility`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

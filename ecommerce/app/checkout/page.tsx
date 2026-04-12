@@ -108,7 +108,7 @@ const CheckoutPageContent = () => {
   });
 
   useEffect(() => {
-    document.title = 'Төлбөр төлөх | TSAAS';
+    document.title = 'Төлбөр төлөх | Outdoor World';
   }, []);
 
   // Fetch bank account from backend
@@ -579,7 +579,7 @@ const CheckoutPageContent = () => {
         body: JSON.stringify({
           orderId: createdOrder.id,
           amount: qpayAmount,
-          description: `Tsaas.mn - ${createdOrder.order_number}`,
+          description: `Outdoor World - ${createdOrder.order_number}`,
           invoiceData: qpayInvoiceData,
         }),
       });
@@ -1210,7 +1210,7 @@ const CheckoutPageContent = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <div className="container mx-auto px-4 py-12">
+        <div className="mx-auto w-full max-w-layout px-3 py-12">
           <div className="text-center">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
             <p className="mt-4 text-gray-600">Ачааллаж байна...</p>
@@ -1222,7 +1222,7 @@ const CheckoutPageContent = () => {
   }
 
   const MainContent = () => (
-    <div className="container mx-auto px-4 py-8">
+    <div className="mx-auto w-full max-w-layout px-3 py-8">
       <ProgressSteps step={step} />
       
       <div className="grid lg:grid-cols-3 gap-8">
@@ -1342,7 +1342,7 @@ const CheckoutPage = () => {
     <Suspense fallback={
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <div className="container mx-auto px-4 py-12">
+        <div className="mx-auto w-full max-w-layout px-3 py-12">
           <div className="text-center">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
             <p className="mt-4 text-gray-600">Ачааллаж байна...</p>

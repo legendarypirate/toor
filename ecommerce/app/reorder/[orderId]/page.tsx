@@ -14,6 +14,8 @@ import { Label } from '@/app/components/ui/label';
 import { Textarea } from '@/app/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/app/components/ui/radio-group';
 import PaymentAppLink from '@/app/checkout/components/PaymentAppLink';
+import { getPublicApiBase } from '@/app/lib/apiBase';
+import { safeImgSrc } from '@/app/lib/imageSrc';
 
 interface OrderItem {
   id: number;
@@ -79,7 +81,7 @@ const ReorderPage = () => {
   });
 
   useEffect(() => {
-    document.title = 'Дахин захиалах | TSAAS';
+    document.title = 'Дахин захиалах | Outdoor World';
   }, []);
 
   useEffect(() => {
@@ -193,8 +195,7 @@ const ReorderPage = () => {
     const fetchBankAccounts = async () => {
       try {
         setLoadingBankAccounts(true);
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-        const response = await fetch(`${API_URL}/bank-accounts/active`);
+        const response = await fetch(`${getPublicApiBase()}/bank-accounts/active`);
         
         if (!response.ok) {
           throw new Error('Failed to fetch bank accounts');
@@ -374,7 +375,7 @@ const ReorderPage = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <div className="container mx-auto px-4 py-12">
+        <div className="mx-auto w-full max-w-layout px-3 py-12">
           <div className="text-center">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
             <p className="mt-4 text-gray-600">Ачааллаж байна...</p>
@@ -389,7 +390,7 @@ const ReorderPage = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <div className="container mx-auto px-4 py-12">
+        <div className="mx-auto w-full max-w-layout px-3 py-12">
           <div className="max-w-4xl mx-auto">
             <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
               <h2 className="text-xl font-bold text-red-900 mb-2">Алдаа гарлаа</h2>
@@ -413,7 +414,7 @@ const ReorderPage = () => {
       <div className="min-h-screen bg-gray-50">
         <Header />
         
-        <div className="container mx-auto px-4 py-8">
+        <div className="mx-auto w-full max-w-layout px-3 py-8">
           <div className="max-w-2xl mx-auto">
             <div className="mb-6">
               <Button
@@ -451,10 +452,10 @@ const ReorderPage = () => {
                           <p className="text-sm text-gray-600 mb-4">
                             Доорх QR кодыг QPay апп-аар уншуулна уу
                           </p>
-                          {qrCode ? (
+                          {qrCode?.trim() ? (
                             <div className="inline-block p-4 bg-white border border-gray-200 rounded-lg">
                               <img 
-                                src={qrCode} 
+                                src={qrCode.trim()} 
                                 alt="QPay QR Code" 
                                 className="w-48 h-48 mx-auto object-contain"
                                 onError={(e) => {
@@ -586,7 +587,7 @@ const ReorderPage = () => {
     <div className="min-h-screen bg-gray-50">
       <Header />
       
-      <div className="container mx-auto px-4 py-8">
+      <div className="mx-auto w-full max-w-layout px-3 py-8">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="mb-6">
@@ -615,13 +616,13 @@ const ReorderPage = () => {
                 {order.items && order.items.length > 0 ? (
                   order.items.map((item) => (
                     <div key={item.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-                      {item.image && (
+                      {item.image?.trim() ? (
                         <img
-                          src={item.image}
+                          src={safeImgSrc(item.image)}
                           alt={item.name_mn || item.name}
                           className="w-16 h-16 object-cover rounded"
                         />
-                      )}
+                      ) : null}
                       <div className="flex-1">
                         <h3 className="font-medium text-gray-900">
                           {item.name_mn || item.name}

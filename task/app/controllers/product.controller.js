@@ -270,6 +270,7 @@ exports.findAll = async (req, res) => {
   try {
     const { 
       category, categoryId, subcategory, minPrice, maxPrice, brand, 
+      retailStoreId, retail_store_id,
       inStock, isOnSale, isNew, isFeatured, isBestSeller, rating, search, q, sortBy, 
       page = 1, limit = 10, includeVariations = 'true'
     } = req.query;
@@ -320,7 +321,24 @@ exports.findAll = async (req, res) => {
     if (isNew !== undefined) where.isNew = isNew === 'true';
     if (isFeatured !== undefined) where.isFeatured = isFeatured === 'true';
     if (isBestSeller !== undefined) where.isBestSeller = isBestSeller === 'true';
-    if (brand) where.brand = brand;
+    if (brand) {
+      const parts = String(brand)
+        .split(",")
+        .map((s) => decodeURIComponent(s.trim()))
+        .filter(Boolean);
+      if (parts.length === 1) where.brand = parts[0];
+      else if (parts.length > 1) where.brand = { [Op.in]: parts };
+    }
+
+    const storeParam = retailStoreId || retail_store_id;
+    if (storeParam) {
+      const parts = String(storeParam)
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      if (parts.length === 1) where.retailStoreId = parts[0];
+      else if (parts.length > 1) where.retailStoreId = { [Op.in]: parts };
+    }
     
     // Price range filter
     const priceConditions = {};

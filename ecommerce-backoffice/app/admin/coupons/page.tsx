@@ -323,55 +323,53 @@ export default function CouponsPage() {
       const result = await response.json();
       const couponsToExport = result.data || [];
 
-      // Dynamically import xlsx
-      const XLSX = await import('xlsx');
-      
-      // Prepare data for Excel
-      const excelData = couponsToExport.map((coupon: Coupon) => {
-        const expired = isExpired(coupon.expires_at);
-        const isActive = coupon.is_active && !expired;
-        let status = 'Идэвхтэй';
-        if (expired) {
-          status = 'Хугацаа дууссан';
-        } else if (!coupon.is_active) {
-          status = 'Идэвхгүй';
-        }
+      const ExcelJS = (await import("exceljs")).default;
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet("Урамшууллын код");
 
-        return {
-          'Код': coupon.code,
-          'Хөнгөлөлт (%)': coupon.discount_percentage,
-          'Дуусах огноо': formatDate(coupon.expires_at),
-          'Ашиглалт': coupon.usage_count || 0,
-          'Төлөв': status,
-          'Төрөл': coupon.is_manual ? 'Олон хэрэглэгч' : 'Нэг удаа',
-          'Үүсгэсэн огноо': coupon.created_at ? formatDate(coupon.created_at) : '',
-        };
-      });
-
-      // Create workbook and worksheet
-      const worksheet = XLSX.utils.json_to_sheet(excelData);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Урамшууллын код');
-
-      // Set column widths
-      const columnWidths = [
-        { wch: 15 }, // Код
-        { wch: 12 }, // Хөнгөлөлт
-        { wch: 20 }, // Дуусах огноо
-        { wch: 12 }, // Ашиглалт
-        { wch: 18 }, // Төлөв
-        { wch: 15 }, // Төрөл
-        { wch: 20 }, // Үүсгэсэн огноо
+      sheet.columns = [
+        { header: "Код", key: "code", width: 18 },
+        { header: "Хөнгөлөлт (%)", key: "discount", width: 14 },
+        { header: "Дуусах огноо", key: "expires", width: 22 },
+        { header: "Ашиглалт", key: "usage", width: 12 },
+        { header: "Төлөв", key: "status", width: 20 },
+        { header: "Төрөл", key: "type", width: 18 },
+        { header: "Үүсгэсэн огноо", key: "created", width: 22 },
       ];
-      worksheet['!cols'] = columnWidths;
 
-      // Generate filename with current date
+      for (const coupon of couponsToExport as Coupon[]) {
+        const expired = isExpired(coupon.expires_at);
+        let status = "Идэвхтэй";
+        if (expired) {
+          status = "Хугацаа дууссан";
+        } else if (!coupon.is_active) {
+          status = "Идэвхгүй";
+        }
+        sheet.addRow({
+          code: coupon.code,
+          discount: coupon.discount_percentage,
+          expires: formatDate(coupon.expires_at),
+          usage: coupon.usage_count || 0,
+          status,
+          type: coupon.is_manual ? "Олон хэрэглэгч" : "Нэг удаа",
+          created: coupon.created_at ? formatDate(coupon.created_at) : "",
+        });
+      }
+
       const now = new Date();
-      const dateStr = now.toISOString().split('T')[0];
+      const dateStr = now.toISOString().split("T")[0];
       const filename = `Урамшууллын_код_${dateStr}.xlsx`;
 
-      // Write file
-      XLSX.writeFile(workbook, filename);
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
     } catch (err) {
       console.error('Error exporting to Excel:', err);
       setError(err instanceof Error ? err.message : 'Excel файл экспорт хийхэд алдаа гарлаа');

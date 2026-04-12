@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { ExternalLink } from 'lucide-react';
+import { getPublicApiBase } from '../lib/apiBase';
+import { safeImgSrc } from '../lib/imageSrc';
 
 interface Partner {
   id: string;
@@ -19,8 +21,7 @@ const Partners = () => {
     const fetchPartners = async () => {
       try {
         setLoading(true);
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-        const response = await fetch(`${API_URL}/partners/active`);
+        const response = await fetch(`${getPublicApiBase()}/partners/active`);
         
         if (!response.ok) {
           console.error('Failed to fetch partners');
@@ -44,7 +45,7 @@ const Partners = () => {
   if (loading) {
     return (
       <section className="w-full py-12 bg-white">
-        <div className="container mx-auto px-4">
+        <div className="mx-auto w-full max-w-layout px-3">
           <h2 className="text-2xl font-bold text-center mb-8">Хамтран ажиллагсад</h2>
           <div className="grid grid-cols-6 md:grid-cols-12 gap-4">
             {[...Array(12)].map((_, i) => (
@@ -65,7 +66,7 @@ const Partners = () => {
 
   return (
     <section className="w-full py-12 bg-white border-t border-gray-200">
-      <div className="container mx-auto px-4">
+      <div className="mx-auto w-full max-w-layout px-3">
         <h2 className="text-2xl md:text-3xl font-bold text-center mb-8 text-gray-900">
           Хамтран ажиллагсад
         </h2>
@@ -75,11 +76,11 @@ const Partners = () => {
             const logoElement = (
               <div className="relative w-full aspect-square bg-white rounded-lg border border-gray-200 p-3 hover:border-gray-300 transition-all hover:shadow-md flex items-center justify-center overflow-hidden">
                 <img
-                  src={partner.logo}
+                  src={safeImgSrc(partner.logo)}
                   alt={partner.name}
                   className="w-full h-full object-contain"
                   onError={(e) => {
-                    e.currentTarget.src = '/placeholder.jpg';
+                    e.currentTarget.src = '/default.jpg';
                   }}
                 />
               </div>

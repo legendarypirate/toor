@@ -34,7 +34,7 @@ module.exports = app => {
   // Update payment status
   router.patch("/:id/payment", orders.updatePaymentStatus);
 
-  // Create invoice (persist address / invoice_data)
+  // Create invoice (update order with invoice/shipping data)
   router.post("/:orderId/invoice", orders.createInvoice);
 
   // Generate invoice PDF
