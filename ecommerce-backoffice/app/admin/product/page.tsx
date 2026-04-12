@@ -361,6 +361,8 @@ function ProductEditForm({ product, onCancel, onSave, isCreating = false, catego
   const [uploadingInfoImages, setUploadingInfoImages] = useState(false);
 
   const DEFAULT_COMPANY_KEY = 'terguun_gereg';
+  /** Radix SelectItem cannot use value="" — reserved for clearing the Select */
+  const NO_BANK_ACCOUNTS_PLACEHOLDER = '__no_bank_accounts__';
   const selectedCompany = form.company || DEFAULT_COMPANY_KEY;
   const bankAccountsForCompany = bankAccounts.filter((ba) => (ba.company || DEFAULT_COMPANY_KEY) === selectedCompany);
 
@@ -903,10 +905,17 @@ function ProductEditForm({ product, onCancel, onSave, isCreating = false, catego
             <div>
               <label className="text-sm font-medium block mb-1">Банкны данс</label>
               <Select
-                value={form.bankAccountId ? String(form.bankAccountId) : ""}
+                value={
+                  bankAccountsForCompany.length === 0
+                    ? NO_BANK_ACCOUNTS_PLACEHOLDER
+                    : form.bankAccountId != null
+                      ? String(form.bankAccountId)
+                      : ""
+                }
                 onValueChange={(value) => {
+                  if (value === NO_BANK_ACCOUNTS_PLACEHOLDER) return;
                   if (!value) return updateField("bankAccountId", undefined);
-                  updateField("bankAccountId", parseInt(value));
+                  updateField("bankAccountId", parseInt(value, 10));
                 }}
                 disabled={uploading || bankAccountsLoading || bankAccountsForCompany.length === 0}
               >
@@ -915,7 +924,7 @@ function ProductEditForm({ product, onCancel, onSave, isCreating = false, catego
                 </SelectTrigger>
                 <SelectContent>
                   {bankAccountsForCompany.length === 0 ? (
-                    <SelectItem value="" disabled>
+                    <SelectItem value={NO_BANK_ACCOUNTS_PLACEHOLDER} disabled>
                       Энэ компанид данс олдсонгүй
                     </SelectItem>
                   ) : (

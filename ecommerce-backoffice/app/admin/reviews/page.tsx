@@ -100,8 +100,11 @@ function ReviewForm({
                   <SelectValue placeholder="Бүтээгдэхүүн сонгох" />
                 </SelectTrigger>
                 <SelectContent>
-                  {products.map((product) => (
-                    <SelectItem key={product.id} value={product.id}>
+                  {products.map((product, idx) => (
+                    <SelectItem
+                      key={product.id || `p-${idx}`}
+                      value={product.id ? String(product.id) : `__product_${idx}__`}
+                    >
                       {product.nameMn || product.name || product.id}
                     </SelectItem>
                   ))}
@@ -112,13 +115,17 @@ function ReviewForm({
             <div>
               <Label htmlFor="userId">Хэрэглэгч</Label>
               <Select
-                value={form.userId || ""}
+                value={form.userId ? form.userId : "__none__"}
                 onValueChange={(value) => {
-                  const selectedUser = users.find(u => u.id === value);
+                  if (value === "__none__") {
+                    setForm({ ...form, userId: "", userName: "" });
+                    return;
+                  }
+                  const selectedUser = users.find((u) => u.id === value);
                   setForm({
                     ...form,
                     userId: value,
-                    userName: selectedUser?.full_name || form.userName || ""
+                    userName: selectedUser?.full_name || form.userName || "",
                   });
                 }}
               >
@@ -126,7 +133,7 @@ function ReviewForm({
                   <SelectValue placeholder="Хэрэглэгч сонгох (сонголттой)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Хэрэглэгч сонгохгүй</SelectItem>
+                  <SelectItem value="__none__">Хэрэглэгч сонгохгүй</SelectItem>
                   {users.map((user) => (
                     <SelectItem key={user.id} value={user.id}>
                       {user.full_name || user.email || user.id}
