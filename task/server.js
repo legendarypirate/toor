@@ -76,6 +76,7 @@ app.get("/", (req, res) => {
   res.json({ message: "Welcome to the application." });
 });
 
+require("./app/routes/order.routes")(app);
 
 // Route imports
 require("./app/routes/task.routes")(app);
@@ -89,7 +90,6 @@ require("./app/routes/role.routes")(app);
 // User-related routes
 require("./app/routes/user.routes")(app);
 
-require("./app/routes/order.routes")(app);
 
 require('./app/routes/product.routes')(app);
 require('./app/routes/category.routes')(app);
