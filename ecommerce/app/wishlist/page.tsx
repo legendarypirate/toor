@@ -23,7 +23,7 @@ const WishlistPage = () => {
 
   useEffect(() => {
     setIsClient(true);
-    document.title = 'Хүслийн жагсаалт | Outdoor World';
+    document.title = 'Хүслийн жагсаалт | TOOR.MN';
   }, []);
 
   // Format price

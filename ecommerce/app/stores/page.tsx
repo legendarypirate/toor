@@ -7,7 +7,7 @@ import { Store } from "lucide-react";
 
 export default function StoresPage() {
   useEffect(() => {
-    document.title = "Дэлгүүрүүд | Outdoor World";
+    document.title = "Дэлгүүрүүд | TOOR.MN";
   }, []);
 
   return (

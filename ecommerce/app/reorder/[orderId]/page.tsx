@@ -81,7 +81,7 @@ const ReorderPage = () => {
   });
 
   useEffect(() => {
-    document.title = 'Дахин захиалах | Outdoor World';
+    document.title = 'Дахин захиалах | TOOR.MN';
   }, []);
 
   useEffect(() => {

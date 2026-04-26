@@ -108,7 +108,7 @@ const CheckoutPageContent = () => {
   });
 
   useEffect(() => {
-    document.title = 'Төлбөр төлөх | Outdoor World';
+    document.title = 'Төлбөр төлөх | TOOR.MN';
   }, []);
 
   // Fetch bank account from backend
@@ -579,7 +579,7 @@ const CheckoutPageContent = () => {
         body: JSON.stringify({
           orderId: createdOrder.id,
           amount: qpayAmount,
-          description: `Outdoor World - ${createdOrder.order_number}`,
+          description: `TOOR.MN - ${createdOrder.order_number}`,
           invoiceData: qpayInvoiceData,
         }),
       });

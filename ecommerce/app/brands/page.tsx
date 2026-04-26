@@ -12,7 +12,7 @@ export default function BrandsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    document.title = "Брэндүүд | Outdoor World";
+    document.title = "Брэндүүд | TOOR.MN";
   }, []);
 
   useEffect(() => {

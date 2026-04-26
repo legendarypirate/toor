@@ -12,7 +12,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
-    document.title = 'Нэвтрэх | Outdoor World';
+    document.title = 'Нэвтрэх | TOOR.MN';
   }, []);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

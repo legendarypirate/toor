@@ -24,7 +24,7 @@ const Home: NextPage<HomeProps> = ({ products, categories }) => {
         <title>mongolia</title>
         <meta name="description" content="Монголын хамгийн анхны онлайн дэлгүүр" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/outlogo.png" />
+        <link rel="icon" href="/toor_logo.png" />
       </Head>
 
       <Header />

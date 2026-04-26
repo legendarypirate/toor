@@ -46,7 +46,7 @@ const CartPage = () => {
   const [isGoogleRedirecting, setIsGoogleRedirecting] = useState(false);
 
   useEffect(() => {
-    document.title = 'Сагс | Outdoor World';
+    document.title = 'Сагс | TOOR.MN';
   }, []);
 
   useEffect(() => {

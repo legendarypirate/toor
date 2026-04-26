@@ -11,7 +11,7 @@ import Partners from './components/Partners';
 
 export default function Home() {
   useEffect(() => {
-    document.title = 'Нүүр хуудас | Outdoor World';
+    document.title = 'Нүүр хуудас | TOOR.MN';
   }, []);
 
   return (

@@ -132,7 +132,7 @@ const MyPage = () => {
 
   useEffect(() => {
     setIsClient(true);
-    document.title = 'Миний хуудас | Outdoor World';
+    document.title = 'Миний хуудас | TOOR.MN';
   }, []);
 
   // Load data from localStorage

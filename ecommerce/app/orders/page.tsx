@@ -60,7 +60,7 @@ const OrdersPage = () => {
   const router = useRouter();
 
   useEffect(() => {
-    document.title = 'Захиалга | Outdoor World';
+    document.title = 'Захиалга | TOOR.MN';
   }, []);
 
   useEffect(() => {

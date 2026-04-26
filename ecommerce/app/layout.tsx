@@ -14,16 +14,16 @@ const nunito = Nunito({
 
 export const metadata: Metadata = {
   title: {
-    default: "Outdoor World",
-    template: "%s | Outdoor World"
+    default: "TOOR.MN",
+    template: "%s | TOOR.MN"
   },
   description: "E-commerce app",
   icons: {
     icon: [
-      { url: "/outlogo.png", type: "image/png" },
+      { url: "/toor_logo.png", type: "image/png" },
     ],
-    shortcut: "/outlogo.png",
-    apple: "/outlogo.png",
+    shortcut: "/toor_logo.png",
+    apple: "/toor_logo.png",
   },
 };
 

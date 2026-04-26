@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -106,7 +106,7 @@ const ProductListPageContent = () => {
   const searchQuery = searchParams.get('q') || '';
 
   useEffect(() => {
-    document.title = 'Дэлгүүр | Outdoor World';
+    document.title = 'Дэлгүүр | TOOR.MN';
   }, []);
   
   const [selectedCategory, setSelectedCategory] = useState<string>(categoryId);
@@ -132,6 +132,9 @@ const ProductListPageContent = () => {
   const [priceStats, setPriceStats] = useState<{ min: number; max: number }>({ min: 0, max: 5000000 });
   const [isInitialLoad, setIsInitialLoad] = useState<boolean>(true);
   const [priceRangeInitialized, setPriceRangeInitialized] = useState<boolean>(false);
+  /** Ref (not state) so in-flight fetches do not clobber: after the first product fetch, filter refetches use list-only loading. */
+  const initialFetchDoneRef = useRef(false);
+  const [listLoading, setListLoading] = useState<boolean>(false);
 
   // Sync selectedCategory with URL params when URL changes
   useEffect(() => {
@@ -253,7 +256,11 @@ const ProductListPageContent = () => {
   const fetchProducts = async (pageNum: number = 1, reset: boolean = true) => {
     try {
       if (reset) {
-        setLoading(true);
+        if (!initialFetchDoneRef.current) {
+          setLoading(true);
+        } else {
+          setListLoading(true);
+        }
         setPage(1);
       } else {
         setLoadingMore(true);
@@ -356,7 +363,9 @@ const ProductListPageContent = () => {
       setError('Бүтээгдэхүүний мэдээлэл авахад алдаа гарлаа');
     } finally {
       setLoading(false);
+      setListLoading(false);
       setLoadingMore(false);
+      initialFetchDoneRef.current = true;
     }
   };
 
@@ -437,6 +446,9 @@ const ProductListPageContent = () => {
   const currentCategory = selectedCategory !== 'all' 
     ? categories.find(c => c.id === selectedCategory)
     : null;
+
+  const priceSpan = Math.max(1, priceStats.max - priceStats.min);
+  const rangeStep = Math.max(1, Math.round(priceStats.max / 1000));
 
   const clearAllFilters = () => {
     handleCategoryChange('all');
@@ -615,7 +627,7 @@ const ProductListPageContent = () => {
     }
   };
 
-  if (loading) {
+  if (loading && !initialFetchDoneRef.current) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
@@ -789,27 +801,27 @@ const ProductListPageContent = () => {
                     <div
                       className="absolute h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 shadow-sm"
                       style={{
-                        left: `${((priceRange[0] - priceStats.min) / (priceStats.max - priceStats.min)) * 100}%`,
-                        right: `${100 - ((priceRange[1] - priceStats.min) / (priceStats.max - priceStats.min)) * 100}%`,
+                        left: `${((priceRange[0] - priceStats.min) / priceSpan) * 100}%`,
+                        right: `${100 - ((priceRange[1] - priceStats.min) / priceSpan) * 100}%`,
                       }}
                     />
                     <input
                       type="range"
                       min={priceStats.min}
                       max={priceStats.max}
-                      step={Math.max(1, Math.round(priceStats.max / 1000))}
+                      step={rangeStep}
                       value={priceRange[0]}
                       onChange={(e) => setPriceRange([parseInt(e.target.value, 10), priceRange[1]])}
-                      className="absolute h-full w-full cursor-pointer opacity-0"
+                      className="absolute z-10 h-full w-full cursor-pointer opacity-0"
                     />
                     <input
                       type="range"
                       min={priceStats.min}
                       max={priceStats.max}
-                      step={Math.max(1, Math.round(priceStats.max / 1000))}
+                      step={rangeStep}
                       value={priceRange[1]}
                       onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value, 10)])}
-                      className="absolute h-full w-full cursor-pointer opacity-0"
+                      className="absolute z-20 h-full w-full cursor-pointer opacity-0"
                     />
                   </div>
                   <div className="rounded-lg bg-slate-50 px-3 py-2 text-center text-sm font-semibold text-slate-800">
@@ -870,6 +882,16 @@ const ProductListPageContent = () => {
             )}
 
             {/* Products Grid */}
+            <div className="relative">
+            {listLoading && (
+              <div
+                className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-white/60 backdrop-blur-[1px]"
+                aria-busy
+                aria-label="Ачааллаж байна"
+              >
+                <Loader2 className="h-9 w-9 animate-spin text-emerald-600" strokeWidth={2} />
+              </div>
+            )}
             {(!products || products.length === 0) ? (
               <div className="text-center py-12">
                 <div className="inline-flex flex-col items-center">
@@ -1013,6 +1035,7 @@ const ProductListPageContent = () => {
                 )}
               </>
             )}
+            </div>
           </div>
         </div>
       </div>
@@ -1146,9 +1169,27 @@ const ProductListPageContent = () => {
                       <div
                         className="absolute h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-600"
                         style={{
-                          left: `${((priceRange[0] - priceStats.min) / (priceStats.max - priceStats.min)) * 100}%`,
-                          right: `${100 - ((priceRange[1] - priceStats.min) / (priceStats.max - priceStats.min)) * 100}%`,
+                          left: `${((priceRange[0] - priceStats.min) / priceSpan) * 100}%`,
+                          right: `${100 - ((priceRange[1] - priceStats.min) / priceSpan) * 100}%`,
                         }}
+                      />
+                      <input
+                        type="range"
+                        min={priceStats.min}
+                        max={priceStats.max}
+                        step={rangeStep}
+                        value={priceRange[0]}
+                        onChange={(e) => setPriceRange([parseInt(e.target.value, 10), priceRange[1]])}
+                        className="absolute z-10 h-full w-full cursor-pointer opacity-0"
+                      />
+                      <input
+                        type="range"
+                        min={priceStats.min}
+                        max={priceStats.max}
+                        step={rangeStep}
+                        value={priceRange[1]}
+                        onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value, 10)])}
+                        className="absolute z-20 h-full w-full cursor-pointer opacity-0"
                       />
                     </div>
                     <div className="rounded-lg bg-slate-50 px-2 py-2 text-center text-sm font-semibold text-slate-800">

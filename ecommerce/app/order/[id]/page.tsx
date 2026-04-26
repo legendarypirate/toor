@@ -64,7 +64,7 @@ const OrderDetailPage = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    document.title = 'Захиалгын дэлгэрэнгүй | Outdoor World';
+    document.title = 'Захиалгын дэлгэрэнгүй | TOOR.MN';
   }, []);
 
   useEffect(() => {

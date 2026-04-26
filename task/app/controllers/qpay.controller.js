@@ -6,8 +6,8 @@ const Product = db.products;
 const axios = require('axios');
 
 // QPay credentials - should be in environment variables
-const QPAY_LOGIN = process.env.QPAY_LOGIN || 'KONO';
-const QPAY_PASSWORD = process.env.QPAY_PASSWORD || '8zcSjp5u';
+const QPAY_LOGIN = process.env.QPAY_LOGIN || 'toor_mn_admin';
+const QPAY_PASSWORD = process.env.QPAY_PASSWORD || '7G61nNTM';
 const QPAY_BASE_URL = 'https://merchant.qpay.mn/v2';
 
 // Helper function to save address from order (only for authenticated users, non-pickup orders)
@@ -349,7 +349,7 @@ exports.createCheckoutInvoice = async (req, res) => {
 
     // Generate unique invoice number
     const senderInvoiceNo = `ECO_${order.order_number}_${Date.now()}`;
-    const invoiceCode = process.env.QPAY_INVOICE_CODE || 'KONO_INVOICE';
+    const invoiceCode = process.env.QPAY_INVOICE_CODE || 'TOOR_MN_INVOICE';
     const invoiceReceiverCode = process.env.QPAY_RECEIVER_CODE || 'DEFAULT_COM_ID';
 
     // Create invoice in QPay with timeout and error handling

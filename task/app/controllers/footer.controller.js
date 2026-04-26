@@ -19,7 +19,7 @@ exports.findOne = async (req, res) => {
         companyName: "Outdoor World",
         companySuffix: "",
         description: "Аялалын бүх үйлчилгээ нэг дор",
-        logoUrl: "/outlogo.png",
+        logoUrl: "/toor_logo.png",
         socialLinks: [
           { name: "Facebook", icon: "f", url: "#" },
           { name: "Twitter", icon: "t", url: "#" },

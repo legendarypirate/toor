@@ -145,9 +145,9 @@ export default function ProductDetailPage() {
   useEffect(() => {
     if (product) {
       const productName = product.nameMn || product.name || 'Бүтээгдэхүүн';
-      document.title = `${productName} | Outdoor World`;
+      document.title = `${productName} | TOOR.MN`;
     } else {
-      document.title = 'Бүтээгдэхүүн | Outdoor World';
+      document.title = 'Бүтээгдэхүүн | TOOR.MN';
     }
   }, [product]);
 

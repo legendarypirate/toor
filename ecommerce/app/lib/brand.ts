@@ -1,9 +1,9 @@
 /** Storefront display branding */
-export const BRAND_NAME = "Outdoor World";
-export const BRAND_NAME_SHORT = "Outdoor World";
+export const BRAND_NAME = "TOOR.MN";
+export const BRAND_NAME_SHORT = "TOOR.MN";
 
-/** Default logo served from `public/outlogo.png` */
-export const STOREFRONT_LOGO_PATH = "/outlogo.png";
+/** Default logo served from `public/toor_logo.png` */
+export const STOREFRONT_LOGO_PATH = "/toor_logo.png";
 
 /**
  * API/DB may still point at the old logo file. Map those to the current asset.
@@ -21,7 +21,7 @@ export function storefrontLogoSrc(): string {
   return STOREFRONT_LOGO_PATH;
 }
 
-const LEGACY_BRAND_RE = /tsaas/i;
+const LEGACY_BRAND_RE = /(tsaas|outdoor\s*world)/i;
 
 /** API/DB may still store the old name; always show current brand in the storefront. */
 export function publicBrandName(apiName?: string | null): string {
@@ -36,7 +36,10 @@ export function publicCopyrightText(text?: string | null): string {
   const fallback = `© ${y} ${BRAND_NAME}. Бүх эрх хуулиар хамгаалагдсан.`;
   if (text == null || String(text).trim() === "") return fallback;
   if (LEGACY_BRAND_RE.test(text)) {
-    return String(text).replace(/Tsaas\.mn/gi, BRAND_NAME).replace(/tsaas\.mn/gi, BRAND_NAME);
+    return String(text)
+      .replace(/Tsaas\.mn/gi, BRAND_NAME)
+      .replace(/tsaas\.mn/gi, BRAND_NAME)
+      .replace(/outdoor world/gi, BRAND_NAME);
   }
   return String(text);
 }
