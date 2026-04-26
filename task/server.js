@@ -60,10 +60,33 @@ async function syncDatabase() {
 
     // Ensure CRM tables exist (customers, contacts, deals, etc.)
     await db.ensureCrmTables();
-    
-    // Then sync the database
-    await db.sequelize.sync({ alter: true });
-    console.log("Synced db.");
+
+    // `alter: true` can emit invalid SQL on PostgreSQL (e.g. near "USING") for ENUM/JSON type drift.
+    // Set SEQUELIZE_SYNC_ALTER=0 in .env to skip alter; otherwise we try alter first, then fall back.
+    const skipAlter = process.env.SEQUELIZE_SYNC_ALTER === "0";
+    if (skipAlter) {
+      await db.sequelize.sync();
+      console.log("Synced db (no alter; SEQUELIZE_SYNC_ALTER=0).");
+      return;
+    }
+
+    try {
+      await db.sequelize.sync({ alter: true });
+      console.log("Synced db.");
+    } catch (alterErr) {
+      const msg = alterErr?.message || String(alterErr);
+      const pg = alterErr?.parent || alterErr?.original;
+      console.error("Failed to sync db (alter: true): " + msg);
+      if (pg) {
+        console.error("  PostgreSQL:", pg.message || pg);
+        if (pg.hint) console.error("  hint:", pg.hint);
+        if (pg.position) console.error("  position:", pg.position);
+      }
+      if (alterErr?.sql) console.error("  SQL:", alterErr.sql);
+      console.log("Falling back to sync() without alter (server will start; apply migrations by hand if needed)...");
+      await db.sequelize.sync();
+      console.log("Synced db (without schema auto-alter).");
+    }
   } catch (err) {
     console.log("Failed to sync db: " + err.message);
   }
