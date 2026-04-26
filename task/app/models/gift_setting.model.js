@@ -6,11 +6,13 @@ module.exports = (sequelize, Sequelize) => {
             defaultValue: Sequelize.UUIDV4,
             primaryKey: true
         },
+        // STRING not ENUM: Sequelize sync(alter) on PG glues USING onto COMMENT (invalid SQL).
         threshold_type: {
-            type: Sequelize.ENUM("amount", "count"),
+            type: Sequelize.STRING(20),
             allowNull: false,
             defaultValue: "amount",
             field: 'threshold_type',
+            validate: { isIn: [["amount", "count"]] },
             comment: "Type of threshold: 'amount' for total amount, 'count' for item count"
         },
         threshold_value: {

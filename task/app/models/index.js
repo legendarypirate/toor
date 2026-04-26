@@ -805,20 +805,11 @@ db.ensureGiftSettingsTable = async function() {
     if (!tableExists) {
       console.log('🔧 Creating gift_settings table...');
       
-      // First, create the ENUM type if it doesn't exist
-      await this.sequelize.query(`
-        DO $$ BEGIN
-          CREATE TYPE "enum_gift_settings_threshold_type" AS ENUM('amount', 'count');
-        EXCEPTION
-          WHEN duplicate_object THEN null;
-        END $$;
-      `);
-      
-      // Create the table
+      // VARCHAR (not native ENUM): matches gift_setting model and avoids broken Sequelize sync(alter) for ENUM+COMMENT.
       await this.sequelize.query(`
         CREATE TABLE IF NOT EXISTS "gift_settings" (
           "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-          "threshold_type" "enum_gift_settings_threshold_type" NOT NULL DEFAULT 'amount',
+          "threshold_type" VARCHAR(20) NOT NULL DEFAULT 'amount',
           "threshold_value" DECIMAL(10, 2) NOT NULL DEFAULT 0,
           "is_active" BOOLEAN DEFAULT true,
           "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
