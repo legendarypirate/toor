@@ -8,7 +8,7 @@ import { showAppMessage } from '@/app/lib/appMessage';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
@@ -57,9 +57,24 @@ export default function LoginPage() {
     }
   };
 
-  const handleGoogleLogin = () => {
-    // Google OAuth implementation
-    window.location.href = '/api/auth/google';
+  const handleGoogleLogin = async () => {
+    setError(null);
+    setIsLoading(true);
+    try {
+      const result = await loginWithGoogle();
+      if (result.success) {
+        showAppMessage('Google хаягаар амжилттай нэвтэрлээ', 'success');
+        setTimeout(() => {
+          router.push('/');
+        }, 500);
+      } else {
+        setError('Google нэвтрэхэд алдаа гарлаа. Дахин оролдоно уу.');
+      }
+    } catch (error: any) {
+      setError(error?.message || 'Google нэвтрэхэд алдаа гарлаа.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleFacebookLogin = () => {

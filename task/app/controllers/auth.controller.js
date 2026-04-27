@@ -15,6 +15,27 @@ const googleClient = new OAuth2Client(
   process.env.GOOGLE_CALLBACK_URL
 );
 
+const getMissingGoogleEnvVars = () => {
+  const requiredVars = ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'GOOGLE_CALLBACK_URL'];
+  return requiredVars.filter((key) => !process.env[key]);
+};
+
+const getFrontendUrl = (req) => {
+  if (process.env.FRONTEND_URL) {
+    return process.env.FRONTEND_URL;
+  }
+
+  const host = req.get('host') || '';
+  if (host.includes('api.toor.mn')) {
+    return 'https://toor.mn';
+  }
+  if (host.includes('api.label.mn')) {
+    return 'https://label.mn';
+  }
+
+  return 'http://localhost:3000';
+};
+
 // JWT Secret
 const JWT_SECRET = process.env.JWT_SECRET || "your_secret_key";
 
@@ -231,6 +252,15 @@ exports.login = async (req, res) => {
 // Generate Google OAuth URL
 exports.googleAuth = (req, res) => {
   try {
+    const missingVars = getMissingGoogleEnvVars();
+    if (missingVars.length > 0) {
+      console.error('Google OAuth misconfiguration. Missing env vars:', missingVars.join(', '));
+      return res.status(500).json({
+        success: false,
+        message: `Google OAuth тохиргоо дутуу байна: ${missingVars.join(', ')}`
+      });
+    }
+
     const authUrl = googleClient.generateAuthUrl({
       access_type: 'offline',
       scope: [
@@ -261,9 +291,18 @@ exports.googleAuth = (req, res) => {
 // Handle Google OAuth Callback
 exports.googleCallback = async (req, res) => {
   try {
+    const missingVars = getMissingGoogleEnvVars();
+    if (missingVars.length > 0) {
+      console.error('Google OAuth callback blocked. Missing env vars:', missingVars.join(', '));
+      const frontendUrl = getFrontendUrl(req);
+      const errorRedirectUrl = `${frontendUrl}/auth/callback` +
+        `#error=${encodeURIComponent(`Google OAuth тохиргоо дутуу байна: ${missingVars.join(', ')}`)}`;
+      return res.redirect(errorRedirectUrl);
+    }
+
     const { code, error } = req.query;
     
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const frontendUrl = getFrontendUrl(req);
     const redirectUrl = `${frontendUrl}/auth/callback`;
     
     // Check for error parameter first (when user cancels authentication)
@@ -377,7 +416,7 @@ exports.googleCallback = async (req, res) => {
       errorMessage = 'Баталгаажуулах код хугацаа нь дууссан';
     }
     
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const frontendUrl = getFrontendUrl(req);
     const errorRedirectUrl = `${frontendUrl}/auth/callback` +
       `#error=${encodeURIComponent(errorMessage)}`;
     
