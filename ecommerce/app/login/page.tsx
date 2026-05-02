@@ -78,8 +78,7 @@ export default function LoginPage() {
   };
 
   const handleFacebookLogin = () => {
-    // Facebook OAuth implementation
-    window.location.href = '/api/auth/facebook';
+    showAppMessage('Facebook-ээр нэвтрэх удахгүй нэмэгдэнэ', 'warning');
   };
 
   return (
@@ -117,8 +116,10 @@ export default function LoginPage() {
             {/* Social Login Buttons */}
             <div className="space-y-3 mb-8">
               <button
+                type="button"
                 onClick={handleGoogleLogin}
-                className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 group"
+                disabled={isLoading}
+                className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 group disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <div className="w-5 h-5 flex items-center justify-center">
                   <Chrome className="w-5 h-5 text-red-500" />
@@ -129,6 +130,7 @@ export default function LoginPage() {
               </button>
 
               <button
+                type="button"
                 onClick={handleFacebookLogin}
                 className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-[#1877F2] text-white rounded-xl hover:bg-[#166fe5] transition-all duration-200 group"
               >

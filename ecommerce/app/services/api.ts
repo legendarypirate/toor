@@ -96,22 +96,18 @@ class ApiService {
     return this.request('/auth/register', 'POST', data);
   }
 
-  // In your apiService class
-async getGoogleAuthUrl(): Promise<ApiResponse<{ auth_url: string }>> {
-  try {
-    // Try the correct endpoint
-    return await this.request('/auth/google', 'GET');
-  } catch (error) {
-    console.error('Failed to get Google auth URL:', error);
-    
-    // Fallback: Return a direct URL structure
-    return {
-      success: false,
-      message: 'Failed to get auth URL from backend',
-      data: { auth_url: '' }
-    };
+  async getGoogleAuthUrl(): Promise<ApiResponse<{ auth_url: string }>> {
+    try {
+      return await this.request('/auth/google', 'GET');
+    } catch (error) {
+      console.error('Failed to get Google auth URL:', error);
+      return {
+        success: false,
+        message: 'Failed to get auth URL from backend',
+        data: { auth_url: '' },
+      };
+    }
   }
-}
 
   async googleCallback(code: string): Promise<ApiResponse> {
     return this.request(`/auth/google/callback?code=${code}`, 'GET');

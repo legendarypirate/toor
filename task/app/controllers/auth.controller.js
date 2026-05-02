@@ -8,17 +8,21 @@ const crypto = require('crypto');
 const User = db.users;
 const Op = db.Sequelize.Op;
 
-// Initialize Google OAuth2 Client
-const googleClient = new OAuth2Client(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
-  process.env.GOOGLE_CALLBACK_URL
-);
+// Google OAuth — toor.mn defaults; override with env in other environments.
+// Never commit GOOGLE_CLIENT_SECRET; set it in server .env / PM2 (rotate if exposed).
+const GOOGLE_CLIENT_ID =
+  process.env.GOOGLE_CLIENT_ID ||
+  "284143902150-gvbg0vcs1l373afbmgmuv73p10uo1qhe.apps.googleusercontent.com";
+const GOOGLE_CALLBACK_URL =
+  process.env.GOOGLE_CALLBACK_URL ||
+  "https://api.toor.mn/api/auth/google/callback";
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 
-const getMissingGoogleEnvVars = () => {
-  const requiredVars = ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'GOOGLE_CALLBACK_URL'];
-  return requiredVars.filter((key) => !process.env[key]);
-};
+const googleClient = new OAuth2Client(
+  GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET,
+  GOOGLE_CALLBACK_URL
+);
 
 const getFrontendUrl = (req) => {
   if (process.env.FRONTEND_URL) {
@@ -252,12 +256,13 @@ exports.login = async (req, res) => {
 // Generate Google OAuth URL
 exports.googleAuth = (req, res) => {
   try {
-    const missingVars = getMissingGoogleEnvVars();
-    if (missingVars.length > 0) {
-      console.error('Google OAuth misconfiguration. Missing env vars:', missingVars.join(', '));
-      return res.status(500).json({
+    if (!GOOGLE_CLIENT_SECRET) {
+      console.error(
+        "Google OAuth misconfiguration. Missing env var: GOOGLE_CLIENT_SECRET"
+      );
+      return res.status(503).json({
         success: false,
-        message: `Google OAuth тохиргоо дутуу байна: ${missingVars.join(', ')}`
+        message: "Google нэвтрэх сервер дээр тохируулаагүй байна",
       });
     }
 
@@ -291,13 +296,14 @@ exports.googleAuth = (req, res) => {
 // Handle Google OAuth Callback
 exports.googleCallback = async (req, res) => {
   try {
-    const missingVars = getMissingGoogleEnvVars();
-    if (missingVars.length > 0) {
-      console.error('Google OAuth callback blocked. Missing env vars:', missingVars.join(', '));
+    if (!GOOGLE_CLIENT_SECRET) {
+      console.error(
+        "Google OAuth misconfiguration. Missing env var: GOOGLE_CLIENT_SECRET"
+      );
       const frontendUrl = getFrontendUrl(req);
-      const errorRedirectUrl = `${frontendUrl}/auth/callback` +
-        `#error=${encodeURIComponent(`Google OAuth тохиргоо дутуу байна: ${missingVars.join(', ')}`)}`;
-      return res.redirect(errorRedirectUrl);
+      const url = new URL(`${frontendUrl}/auth/callback`);
+      url.hash = `#error=${encodeURIComponent("Google нэвтрэх тохируулаагүй байна")}`;
+      return res.redirect(url.toString());
     }
 
     const { code, error } = req.query;
@@ -336,7 +342,7 @@ exports.googleCallback = async (req, res) => {
     // Verify ID token
     const ticket = await googleClient.verifyIdToken({
       idToken: tokens.id_token,
-      audience: process.env.GOOGLE_CLIENT_ID
+      audience: GOOGLE_CLIENT_ID,
     });
     
     const payload = ticket.getPayload();
