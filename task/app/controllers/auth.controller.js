@@ -8,25 +8,31 @@ const crypto = require('crypto');
 const User = db.users;
 const Op = db.Sequelize.Op;
 
-// Google OAuth — toor.mn defaults; override with env in other environments.
-// Never commit GOOGLE_CLIENT_SECRET; set it in server .env / PM2 (rotate if exposed).
-const GOOGLE_CLIENT_ID =
-  process.env.GOOGLE_CLIENT_ID ||
-  "284143902150-gvbg0vcs1l373afbmgmuv73p10uo1qhe.apps.googleusercontent.com";
-const GOOGLE_CALLBACK_URL =
-  process.env.GOOGLE_CALLBACK_URL ||
-  "https://api.toor.mn/api/auth/google/callback";
+// Google OAuth — set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_CALLBACK_URL in .env / PM2 (never commit secrets).
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const GOOGLE_CALLBACK_URL = process.env.GOOGLE_CALLBACK_URL;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 
-const googleClient = new OAuth2Client(
-  GOOGLE_CLIENT_ID,
-  GOOGLE_CLIENT_SECRET,
-  GOOGLE_CALLBACK_URL
-);
+const googleClient =
+  GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET && GOOGLE_CALLBACK_URL
+    ? new OAuth2Client(
+        GOOGLE_CLIENT_ID,
+        GOOGLE_CLIENT_SECRET,
+        GOOGLE_CALLBACK_URL
+      )
+    : null;
+
+/** Site origin only (no /api). OAuth must redirect to /auth/callback on the Next app. */
+const normalizeFrontendOrigin = (raw) => {
+  if (!raw || typeof raw !== "string") return raw;
+  let u = raw.trim().replace(/\/+$/, "");
+  u = u.replace(/\/api$/i, "");
+  return u;
+};
 
 const getFrontendUrl = (req) => {
   if (process.env.FRONTEND_URL) {
-    return process.env.FRONTEND_URL;
+    return normalizeFrontendOrigin(process.env.FRONTEND_URL);
   }
 
   const host = req.get('host') || '';
@@ -256,9 +262,15 @@ exports.login = async (req, res) => {
 // Generate Google OAuth URL
 exports.googleAuth = (req, res) => {
   try {
-    if (!GOOGLE_CLIENT_SECRET) {
+    if (!googleClient) {
+      const missing = [
+        !GOOGLE_CLIENT_ID && "GOOGLE_CLIENT_ID",
+        !GOOGLE_CLIENT_SECRET && "GOOGLE_CLIENT_SECRET",
+        !GOOGLE_CALLBACK_URL && "GOOGLE_CALLBACK_URL",
+      ].filter(Boolean);
       console.error(
-        "Google OAuth misconfiguration. Missing env var: GOOGLE_CLIENT_SECRET"
+        "Google OAuth misconfiguration. Missing env vars:",
+        missing.join(", ")
       );
       return res.status(503).json({
         success: false,
@@ -296,9 +308,9 @@ exports.googleAuth = (req, res) => {
 // Handle Google OAuth Callback
 exports.googleCallback = async (req, res) => {
   try {
-    if (!GOOGLE_CLIENT_SECRET) {
+    if (!googleClient) {
       console.error(
-        "Google OAuth misconfiguration. Missing env var: GOOGLE_CLIENT_SECRET"
+        "Google OAuth misconfiguration. Missing GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, or GOOGLE_CALLBACK_URL"
       );
       const frontendUrl = getFrontendUrl(req);
       const url = new URL(`${frontendUrl}/auth/callback`);
@@ -309,7 +321,7 @@ exports.googleCallback = async (req, res) => {
     const { code, error } = req.query;
     
     const frontendUrl = getFrontendUrl(req);
-    const redirectUrl = `${frontendUrl}/auth/callback`;
+    const redirectUrl = `https://toor.mn/auth/callback`;
     
     // Check for error parameter first (when user cancels authentication)
     if (error) {
