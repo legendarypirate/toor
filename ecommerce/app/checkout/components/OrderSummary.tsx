@@ -118,19 +118,10 @@ const OrderSummary = ({
             <span>Барааны үнэ</span>
             <span>{formatPrice(displaySubtotal)}</span>
           </div>
-          <div className="flex justify-between text-gray-600">
-            <span>Хүргэлтийн төлбөр</span>
-            <span>{formatPrice(shipping)}</span>
-          </div>
           {couponDiscount > 0 && appliedCoupon && (
             <div className="flex justify-between text-green-600">
               <span>Урамшуулал ({appliedCoupon.code})</span>
               <span>-{formatPrice(couponDiscount)}</span>
-            </div>
-          )}
-          {formData.deliveryMethod === 'delivery' && shipping === 0 && displaySubtotal > 120000 && (
-            <div className="text-xs text-green-600 text-right">
-              * 120,000₮-с дээш хүргэлтийн нэмэлт төлбөр хөнгөлөгдсөн
             </div>
           )}
           <div className="flex justify-between font-bold text-lg border-t border-gray-200 pt-3">

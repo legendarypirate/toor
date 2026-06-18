@@ -23,7 +23,7 @@ module.exports = (sequelize, Sequelize) => {
         shipping_cost: {
             type: Sequelize.DECIMAL(10, 2),
             allowNull: false,
-            defaultValue: 5000.00
+            defaultValue: 0.00
         },
         tax: {
             type: Sequelize.DECIMAL(10, 2),

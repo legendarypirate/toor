@@ -273,20 +273,12 @@ const CheckoutPageContent = () => {
         return sum + (price * quantity);
       }, 0);
     
-    let shipping = 0;
-    if (formData.deliveryMethod === 'pickup' || formData.deliveryMethod === 'invoice') {
-      // Ирж авах: 0
-      shipping = 0;
-    } else {
-      // Хүргэлтээр: 5000 (or 0 if subtotal > 120000)
-      shipping = subtotal > 120000 ? 0 : 8800;
-    }
-    
+    const shipping = 0;
     const couponDiscount = appliedCoupon?.discount || 0;
-    const total = subtotal + shipping - couponDiscount;
+    const total = subtotal - couponDiscount;
     
     return { subtotal, shipping, couponDiscount, total };
-  }, [cartItems, formData.deliveryMethod, appliedCoupon]);
+  }, [cartItems, appliedCoupon]);
 
   const formatPrice = useCallback((price: number) => {
     return price.toLocaleString() + '₮';
@@ -387,11 +379,7 @@ const CheckoutPageContent = () => {
   }, []);
 
   const validateForm = useCallback(() => {
-    const requiredFields = ['firstName', 'phone'];
-    
-    if (formData.deliveryMethod === 'delivery') {
-      requiredFields.push('address', 'city');
-    }
+    const requiredFields = ['firstName', 'phone', 'address', 'city'];
     
     // Validate invoice data if invoice type is selected
     if (formData.invoiceType) {
@@ -457,21 +445,16 @@ const CheckoutPageContent = () => {
         'card': 2,
       };
       
-      let fullShippingAddress = '';
-      if (currentFormData.deliveryMethod === 'delivery') {
-        const shippingAddressParts = [
-          currentFormData.city,
-          currentFormData.district && `Дүүрэг: ${currentFormData.district}`,
-          currentFormData.khoroo && `Хороо: ${currentFormData.khoroo}`,
-          currentFormData.address
-        ].filter(Boolean);
-        fullShippingAddress = shippingAddressParts.join(', ').trim();
-        
-        if (!fullShippingAddress || fullShippingAddress.length < 3) {
-          throw new Error('Хүргэлтийн хаяг бүрэн оруулна уу');
-        }
-      } else {
-        fullShippingAddress = 'Ирж авах';
+      const shippingAddressParts = [
+        currentFormData.city,
+        currentFormData.district && `Дүүрэг: ${currentFormData.district}`,
+        currentFormData.khoroo && `Хороо: ${currentFormData.khoroo}`,
+        currentFormData.address
+      ].filter(Boolean);
+      const fullShippingAddress = shippingAddressParts.join(', ').trim();
+      
+      if (!fullShippingAddress || fullShippingAddress.length < 3) {
+        throw new Error('Хүргэлтийн хаяг бүрэн оруулна уу');
       }
 
       const orderItems = cartItems.map(item => ({
@@ -503,10 +486,10 @@ const CheckoutPageContent = () => {
         grandTotal: total,
         paymentMethod: paymentMethodMap[paymentMethod] || 0,
         shippingAddress: fullShippingAddress,
-        address: currentFormData.deliveryMethod === 'delivery' ? currentFormData.address || null : null, // Detailed address (e.g., "нарны хороолол 7р байр")
-        city: currentFormData.deliveryMethod === 'delivery' ? currentFormData.city || null : null,
-        district: currentFormData.deliveryMethod === 'delivery' ? currentFormData.district || null : null,
-        khoroo: currentFormData.deliveryMethod === 'delivery' ? currentFormData.khoroo || null : null,
+        address: currentFormData.address || null,
+        city: currentFormData.city || null,
+        district: currentFormData.district || null,
+        khoroo: currentFormData.khoroo || null,
         phoneNumber: currentFormData.phone,
         customerName: currentFormData.lastName ? `${currentFormData.firstName} ${currentFormData.lastName}`.trim() : currentFormData.firstName.trim(),
         notes: currentFormData.note || null,
@@ -555,9 +538,6 @@ const CheckoutPageContent = () => {
         return;
       }
 
-      // Calculate QPay invoice amount based on delivery method
-      // Pickup (ирж авах): amount = subtotal (product price only, shipping = 0)
-      // Delivery (хүргэлтээр): amount = subtotal + 5000 (or subtotal if subtotal > 120000)
       const qpayAmount = total;
 
       // Prepare invoice data for QPay if invoice type is selected
@@ -667,11 +647,7 @@ const CheckoutPageContent = () => {
     const currentFormData = data || formData;
     
     // Validate using the current form data
-    const requiredFields = ['firstName', 'phone'];
-    
-    if (currentFormData.deliveryMethod === 'delivery') {
-      requiredFields.push('address', 'city');
-    }
+    const requiredFields = ['firstName', 'phone', 'address', 'city'];
     
     // Validate invoice data if invoice type is selected
     if (currentFormData.invoiceType) {
@@ -721,7 +697,7 @@ const CheckoutPageContent = () => {
         }
 
         // Save address to addresses table if delivery method is 'delivery'
-        if (currentFormData.deliveryMethod === 'delivery' && currentFormData.city && currentFormData.address) {
+        if (currentFormData.city && currentFormData.address) {
           try {
             await apiService.saveAddress({
               city: currentFormData.city,
@@ -853,16 +829,13 @@ const CheckoutPageContent = () => {
       return;
     }
     
-    // Validate address if delivery method is 'delivery'
-    if (currentFormData.deliveryMethod === 'delivery') {
-      if (!currentFormData.address || currentFormData.address.trim() === '') {
-        alert('Та хүргэлтийн хаягаа оруулна уу.');
-        return;
-      }
-      if (!currentFormData.city || currentFormData.city.trim() === '') {
-        alert('Та хот-оо оруулна уу.');
-        return;
-      }
+    if (!currentFormData.address || currentFormData.address.trim() === '') {
+      alert('Та хүргэлтийн хаягаа оруулна уу.');
+      return;
+    }
+    if (!currentFormData.city || currentFormData.city.trim() === '') {
+      alert('Та хот-оо оруулна уу.');
+      return;
     }
     
     setInvoiceFormData({
@@ -888,30 +861,17 @@ const CheckoutPageContent = () => {
       // Use latest form data if available, otherwise fall back to formData state
       const currentFormData = latestFormDataForInvoice || formData;
       
-      // Determine shipping address and cost based on delivery method
-      let fullShippingAddress = '';
-      let calculatedShipping = 0;
+      const shippingAddressParts = [
+        currentFormData.city,
+        currentFormData.district && `Дүүрэг: ${currentFormData.district}`,
+        currentFormData.khoroo && `Хороо: ${currentFormData.khoroo}`,
+        currentFormData.address
+      ].filter(Boolean);
+      const fullShippingAddress = shippingAddressParts.join(', ').trim();
+      const calculatedShipping = 0;
       
-      if (currentFormData.deliveryMethod === 'delivery') {
-        // Хүргэлтээр: build full address
-        const shippingAddressParts = [
-          currentFormData.city,
-          currentFormData.district && `Дүүрэг: ${currentFormData.district}`,
-          currentFormData.khoroo && `Хороо: ${currentFormData.khoroo}`,
-          currentFormData.address
-        ].filter(Boolean);
-        fullShippingAddress = shippingAddressParts.join(', ').trim();
-        
-        if (!fullShippingAddress || fullShippingAddress.length < 3) {
-          throw new Error('Хүргэлтийн хаяг бүрэн оруулна уу');
-        }
-        
-        // Calculate shipping: 8800 if subtotal <= 120000, otherwise 0
-        calculatedShipping = subtotal > 120000 ? 0 : 8800;
-      } else {
-        // Ирж авах or invoice method
-        fullShippingAddress = 'Ирж авах';
-        calculatedShipping = 0;
+      if (!fullShippingAddress || fullShippingAddress.length < 3) {
+        throw new Error('Хүргэлтийн хаяг бүрэн оруулна уу');
       }
 
       const orderItems = cartItems.map(item => ({
@@ -934,13 +894,13 @@ const CheckoutPageContent = () => {
         subtotal: subtotal,
         shippingCost: calculatedShipping,
         tax: 0,
-        grandTotal: subtotal + calculatedShipping,
+        grandTotal: subtotal,
         paymentMethod: 1,
         shippingAddress: fullShippingAddress,
-        address: currentFormData.deliveryMethod === 'delivery' ? currentFormData.address || null : null, // Detailed address (e.g., "нарны хороолол 7р байр")
-        city: currentFormData.deliveryMethod === 'delivery' ? currentFormData.city || null : null,
-        district: currentFormData.deliveryMethod === 'delivery' ? currentFormData.district || null : null,
-        khoroo: currentFormData.deliveryMethod === 'delivery' ? currentFormData.khoroo || null : null,
+        address: currentFormData.address || null,
+        city: currentFormData.city || null,
+        district: currentFormData.district || null,
+        khoroo: currentFormData.khoroo || null,
         phoneNumber: invoiceFormData.phone || currentFormData.phone,
         customerName: invoiceFormData.name || (currentFormData.lastName 
           ? `${currentFormData.firstName} ${currentFormData.lastName}`.trim()
@@ -1079,8 +1039,8 @@ const CheckoutPageContent = () => {
         },
         body: JSON.stringify({
           address: fullShippingAddress,
-          district: currentFormData.deliveryMethod === 'delivery' ? currentFormData.district || undefined : undefined,
-          khoroo: currentFormData.deliveryMethod === 'delivery' ? currentFormData.khoroo || undefined : undefined,
+          district: currentFormData.district || undefined,
+          khoroo: currentFormData.khoroo || undefined,
           phone: invoiceFormData.phone || currentFormData.phone,
           invoiceData: enhancedInvoiceData,
         }),
@@ -1131,16 +1091,8 @@ const CheckoutPageContent = () => {
       
       // Build customer address string
       let customerAddressString = '';
-      if (currentFormData.deliveryMethod === 'delivery' && fullShippingAddress && fullShippingAddress !== 'Ирж авах') {
+      if (fullShippingAddress) {
         customerAddressString = fullShippingAddress;
-      } else if (currentFormData.deliveryMethod === 'invoice' && currentFormData.city && currentFormData.address) {
-        const addressParts = [
-          currentFormData.city,
-          currentFormData.district && `Дүүрэг: ${currentFormData.district}`,
-          currentFormData.khoroo && `Хороо: ${currentFormData.khoroo}`,
-          currentFormData.address
-        ].filter(Boolean);
-        customerAddressString = addressParts.join(', ').trim();
       }
 
       // Issuer information (matching backend)

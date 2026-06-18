@@ -81,17 +81,15 @@ const Step3Content = ({
               <div className="flex justify-between">
                 <span className="text-gray-600">Хүргэлтийн хаяг:</span>
                 <span className="font-medium text-right">
-                  {formData.deliveryMethod === 'pickup' || formData.deliveryMethod === 'invoice' 
-                    ? 'Ирж авах'
-                    : (() => {
-                        const addressParts = [
-                          formData.city,
-                          formData.district && `Дүүрэг: ${formData.district}`,
-                          formData.khoroo && `Хороо: ${formData.khoroo}`,
-                          formData.address
-                        ].filter(Boolean);
-                        return addressParts.length > 0 ? addressParts.join(', ') : 'Хаяг оруулаагүй';
-                      })()}
+                  {(() => {
+                    const addressParts = [
+                      formData.city,
+                      formData.district && `Дүүрэг: ${formData.district}`,
+                      formData.khoroo && `Хороо: ${formData.khoroo}`,
+                      formData.address
+                    ].filter(Boolean);
+                    return addressParts.length > 0 ? addressParts.join(', ') : 'Хаяг оруулаагүй';
+                  })()}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -107,10 +105,7 @@ const Step3Content = ({
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Хүргэлтийн арга:</span>
-                <span className="font-medium">
-                  {formData.deliveryMethod === 'delivery' ? 'Хүргэлтээр' : 
-                   formData.deliveryMethod === 'pickup' ? 'Ирж авах' : 'Нэхэмжлэх авах'}
-                </span>
+                <span className="font-medium">Хүргэлтээр</span>
               </div>
             </div>
           </CardContent>

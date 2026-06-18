@@ -125,9 +125,8 @@ useEffect(() => {
       return sum + ((originalPrice - item.product.price) * item.quantity);
     }, 0);
 
-  const shipping = subtotal > 120000 ? 0 : 8800;
   const promoDiscount = appliedPromo?.discount || 0;
-  const total = subtotal + shipping - promoDiscount;
+  const total = subtotal - promoDiscount;
 
   const formatPrice = (price: number) => {
     return price.toLocaleString() + '₮';
@@ -574,13 +573,6 @@ useEffect(() => {
                   </div>
                 )}
                 
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Хүргэлт</span>
-                  <span className="font-medium">
-                    {shipping === 0 ? 'ҮНЭГҮЙ' : formatPrice(shipping)}
-                  </span>
-                </div>
-                
                 <div className="border-t border-gray-200 pt-4">
                   <div className="flex justify-between">
                     <span className="font-bold text-gray-900">Төлөх дүн</span>
@@ -703,7 +695,7 @@ useEffect(() => {
               <div className="space-y-3 border-t border-gray-200 pt-6">
                 <div className="flex items-center gap-3 text-sm text-gray-600">
                   <Truck className="w-4 h-4 text-green-600" />
-                  <span>120,000₮-с дээш үнэгүй хүргэлт</span>
+                  <span>Үнэгүй хүргэлт</span>
                 </div>
                 <div className="flex items-center gap-3 text-sm text-gray-600">
                   <CreditCard className="w-4 h-4 text-blue-600" />

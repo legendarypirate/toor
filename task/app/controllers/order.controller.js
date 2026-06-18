@@ -167,7 +167,7 @@ exports.create = (req, res) => {
       order_number: generateOrderNumber(),
       user_id: req.body.userId || `guest_${Date.now()}`,
       subtotal: req.body.subtotal || 0,
-      shipping_cost: req.body.shippingCost || 5000,
+      shipping_cost: req.body.shippingCost || 0,
       tax: req.body.tax || 0,
       grand_total: req.body.grandTotal || 0,
       payment_method: req.body.paymentMethod || 0,
@@ -562,7 +562,7 @@ exports.update = (req, res) => {
                 return sum + (parseFloat(item.price) * parseInt(item.quantity));
               }, 0);
               
-              const shippingCost = parseFloat(order.shipping_cost) || 5000;
+              const shippingCost = parseFloat(order.shipping_cost) || 0;
               const tax = parseFloat(order.tax) || 0;
               const grandTotal = subtotal + shippingCost + tax;
 

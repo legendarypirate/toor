@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, CreditCard, Truck, MapPin, User, Phone, Mail, Lock, Home, FileText, Check, Map, X, Trash2 } from 'lucide-react';
+import { ArrowLeft, CreditCard, Truck, MapPin, User, Phone, Mail, Lock, Home, FileText, Check, Trash2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -13,7 +13,6 @@ import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Textarea } from '@/app/components/ui/textarea';
 import { Label } from '@/app/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/app/components/ui/radio-group';
 import {
   Select,
   SelectContent,
@@ -42,19 +41,14 @@ const formSchema = z.object({
   khoroo: z.string().optional(),
   address: z.string().optional(),
   note: z.string().optional(),
-  deliveryMethod: z.enum(['delivery', 'pickup', 'invoice']),
+  deliveryMethod: z.literal('delivery'),
 }).refine((data) => {
-  if (data.deliveryMethod === 'delivery') {
-    // Check if address exists and has at least 3 characters after trimming
-    const addressValue = data.address;
-    if (!addressValue || typeof addressValue !== 'string') {
-      return false;
-    }
-    const trimmedAddress = addressValue.trim();
-    // Count actual characters (not bytes) - this handles Unicode correctly
-    return trimmedAddress.length >= 3;
+  const addressValue = data.address;
+  if (!addressValue || typeof addressValue !== 'string') {
+    return false;
   }
-  return true;
+  const trimmedAddress = addressValue.trim();
+  return trimmedAddress.length >= 3;
 }, {
   message: 'Дэлгэрэнгүй хаягаа оруулна уу. Хамгийн багадаа 3 тэмдэгт',
   path: ['address'],
@@ -99,7 +93,6 @@ const Step1Content = ({
   const router = useRouter();
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
   const [loadingAddresses, setLoadingAddresses] = useState(false);
-  const [showMapModal, setShowMapModal] = useState(false);
   const prevFormDataRef = useRef(formData);
   const hasPrefilledDefaultAddressRef = useRef(false);
 
@@ -120,8 +113,6 @@ const Step1Content = ({
     },
   });
 
-  // Watch deliveryMethod to conditionally show address fields
-  const deliveryMethod = form.watch('deliveryMethod');
   const city = form.watch('city');
 
   // Fetch saved addresses for authenticated users (only on mount or auth change)
@@ -377,15 +368,14 @@ const Step1Content = ({
           </CardContent>
         </Card>
 
-        {/* Shipping Address - Hide for pickup */}
-        {deliveryMethod !== 'pickup' && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="w-5 h-5" />
-                {deliveryMethod === 'delivery' ? 'Хүргэлтийн хаяг' : 'Хаяг'}
-              </CardTitle>
-            </CardHeader>
+        {/* Shipping Address */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MapPin className="w-5 h-5" />
+              Хүргэлтийн хаяг
+            </CardTitle>
+          </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {/* Saved Addresses Section - Show for authenticated users with saved addresses */}
@@ -561,7 +551,6 @@ const Step1Content = ({
               </div>
             </CardContent>
           </Card>
-        )}
 
         {/* Delivery Method */}
         <Card>
@@ -572,70 +561,13 @@ const Step1Content = ({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <FormField
-              control={form.control}
-              name="deliveryMethod"
-              render={({ field }) => (
-                <FormItem className="space-y-3">
-                  <FormControl>
-                    <RadioGroup
-                      onValueChange={(value) => {
-                        field.onChange(value);
-                        // Get current form values to preserve address fields
-                        const currentFormValues = form.getValues();
-                        // Update parent state with delivery method AND current address fields
-                        handleDeliveryMethodChange(value, {
-                          city: currentFormValues.city,
-                          district: currentFormValues.district,
-                          khoroo: currentFormValues.khoroo,
-                          address: currentFormValues.address,
-                        });
-                      }}
-                      value={field.value}
-                      className="flex flex-col space-y-3"
-                    >
-                      <label className="flex items-start gap-3 cursor-pointer p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
-                        <RadioGroupItem value="delivery" id="delivery" className="mt-1" />
-                        <div className="flex-1">
-                          <div className="font-medium">Хүргэлтээр</div>
-                          <div className="text-sm text-gray-600 mt-1">
-                            {subtotal > 120000 ? 'Үнэгүй' : `${formatPrice(8800)}`} - 24 цагт
-                          </div>
-                          <div className="text-xs text-gray-500 mt-2">
-                            Таны зааж өгсөн хаягт хүргэж өгнө
-                          </div>
-                        </div>
-                      </label>
-                      <label className="flex items-start gap-3 cursor-pointer p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
-                        <RadioGroupItem value="pickup" id="pickup" className="mt-1" />
-                        <div className="flex-1">
-                          <div className="font-medium">Ирж авах</div>
-                          <div className="text-sm text-gray-600 mt-1">Үнэгүй - Одоо авах боломжтой</div>
-                          <div className="flex items-center gap-2 mt-2">
-                            <div className="text-xs text-gray-500 flex-1">
-                              Улаанбаатар хот, Хан-Уул дүүрэг 2-р хороо 19 Үйлчилгээний төвөөс баруун тийш 15-р сургуулийн дэргэд
-                            </div>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                setShowMapModal(true);
-                              }}
-                              className="flex-shrink-0 p-1.5 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                              title="Байршлыг харуулах"
-                            >
-                              <Map className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      </label>
-                    </RadioGroup>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="p-3 border border-gray-200 rounded-lg bg-gray-50">
+              <div className="font-medium">Хүргэлтээр</div>
+              <div className="text-sm text-gray-600 mt-1">24 цагт</div>
+              <div className="text-xs text-gray-500 mt-2">
+                Таны зааж өгсөн хаягт хүргэж өгнө
+              </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -687,10 +619,7 @@ const Step1Content = ({
               variant="blue"
             >
               <FileText className="w-4 h-4" />
-              {isCreatingInvoice ? 'Нэхэмжлэх үүсгэж байна...' : 
-                deliveryMethod === 'delivery' 
-                  ? `Нэхэмжлэх авах - ${formatPrice(total)}`
-                  : `Нэхэмжлэх авах - Бараа: ${formatPrice(subtotal)} (хүргэлт ороогүй), Нийт: ${formatPrice(subtotal)}`}
+              {isCreatingInvoice ? 'Нэхэмжлэх үүсгэж байна...' : `Нэхэмжлэх авах - ${formatPrice(total)}`}
             </Button>
             <Button
               type="submit"
@@ -703,43 +632,6 @@ const Step1Content = ({
           </div>
         </div>
       </form>
-
-      {/* Map Modal */}
-      {showMapModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
-          onClick={() => setShowMapModal(false)}
-        >
-          <div
-            className="bg-white rounded-lg shadow-xl max-w-4xl w-full h-[95vh] overflow-hidden flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between p-4 border-b">
-              <h3 className="text-lg font-semibold">Байршлын зураг</h3>
-              <button
-                type="button"
-                onClick={() => setShowMapModal(false)}
-                className="p-1 hover:bg-gray-100 rounded transition-colors"
-                aria-label="Хаах"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="flex-1 overflow-hidden">
-              <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3124.0912695361217!2d106.89530597667277!3d47.901416067572406!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x5d9693d38fd6e64d%3A0xcd5825d2bea57635!2z0J_QvtGB0YvQvSDRhtCw0LDRgSDRhdGD0LTQsNC70LTQsNCw0L3RiyDRgtOp0LI!5e1!3m2!1sen!2smn!4v1770300058063!5m2!1sen!2smn"
-                width="100%"
-                height="100%"
-                style={{ border: 0 }}
-                allowFullScreen
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                className="w-full h-full"
-              />
-            </div>
-          </div>
-        </div>
-      )}
     </Form>
   );
 };
