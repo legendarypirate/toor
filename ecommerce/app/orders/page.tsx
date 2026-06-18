@@ -9,8 +9,7 @@ import {
   XCircle,
   Eye,
   ArrowLeft,
-  RotateCcw,
-  FileText
+  RotateCcw
 } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -271,15 +270,6 @@ const OrdersPage = () => {
                               <RotateCcw className="w-3 h-3" />
                               Дахин захиалах
                             </Link>
-                            <a
-                              href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/order/${order.id}/invoice/pdf`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 flex items-center gap-1 transition-colors"
-                            >
-                              <FileText className="w-3 h-3" />
-                              Нэхэмжлэх авах
-                            </a>
                           </>
                         )}
                         <Link

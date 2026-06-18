@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, CreditCard, Truck, MapPin, User, Phone, Mail, Lock, Home, FileText, Check, Trash2 } from 'lucide-react';
+import { ArrowLeft, CreditCard, Truck, MapPin, User, Phone, Mail, Lock, Home, Check, Trash2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -59,12 +59,9 @@ interface Step1ContentProps {
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
   handleKeyDown: (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
   handleProceedToPayment: (data: any) => Promise<void>;
-  handleCreateInvoice: (e?: React.MouseEvent, formDataOverride?: any) => Promise<void>;
   handleDeliveryMethodChange: (deliveryMethod: string, addressFields?: { city?: string; district?: string; khoroo?: string; address?: string }) => void;
   isAuthenticated: boolean;
-  subtotal: number;
   total: number;
-  isCreatingInvoice: boolean;
   isProcessing: boolean;
   formatPrice: (price: number) => string;
 }
@@ -81,12 +78,9 @@ interface SavedAddress {
 const Step1Content = ({
   formData,
   handleProceedToPayment,
-  handleCreateInvoice,
   handleDeliveryMethodChange,
   isAuthenticated,
-  subtotal,
   total,
-  isCreatingInvoice,
   isProcessing,
   formatPrice
 }: Step1ContentProps) => {
@@ -609,18 +603,6 @@ const Step1Content = ({
             </Link>
           </Button>
           <div className="flex flex-col sm:flex-row gap-3">
-            <Button
-              type="button"
-              onClick={(e) => {
-                const currentFormValues = form.getValues();
-                handleCreateInvoice(e, currentFormValues);
-              }}
-              disabled={isCreatingInvoice}
-              variant="blue"
-            >
-              <FileText className="w-4 h-4" />
-              {isCreatingInvoice ? 'Нэхэмжлэх үүсгэж байна...' : `Нэхэмжлэх авах - ${formatPrice(total)}`}
-            </Button>
             <Button
               type="submit"
               disabled={isProcessing}

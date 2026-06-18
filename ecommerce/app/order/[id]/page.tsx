@@ -11,7 +11,6 @@ import {
   ArrowLeft,
   MapPin,
   Phone,
-  FileText,
   RotateCcw
 } from 'lucide-react';
 import Header from '../../components/Header';
@@ -379,15 +378,6 @@ const OrderDetailPage = () => {
                   <RotateCcw className="w-4 h-4" />
                   Дахин захиалах
                 </Link>
-                <a
-                  href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/order/${order.id}/invoice/pdf`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  <FileText className="w-4 h-4" />
-                  Нэхэмжлэх авах
-                </a>
               </>
             )}
           </div>

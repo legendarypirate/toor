@@ -1199,12 +1199,9 @@ const CheckoutPageContent = () => {
               handleInputChange={handleInputChange}
               handleKeyDown={handleKeyDown}
               handleProceedToPayment={handleProceedToPayment}
-              handleCreateInvoice={handleCreateInvoice}
               handleDeliveryMethodChange={handleDeliveryMethodChange}
               isAuthenticated={isAuthenticated}
-              subtotal={subtotal}
               total={total}
-              isCreatingInvoice={isCreatingInvoice}
               isProcessing={isProcessing}
               formatPrice={formatPrice}
             />
